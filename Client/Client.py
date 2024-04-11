@@ -2,6 +2,8 @@ import socket
 import struct
 import threading
 
+# Hello Tlaten, this is a test to see if GitHub works correctly.
+
 class Client:
     def __init__(self, client_name):
         self.client_name = client_name
