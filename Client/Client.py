@@ -13,7 +13,7 @@ class Client:
         # B: Represents a single byte for the message type.
         # 32s: Represents a 32-byte string for the server name.
         # H: Represents a 2-byte unsigned short integer for the server port.
-        self.udp_format = ">4sB32sH"
+        self.udp_format = ">IB32sH"
 
         self.local_ip = socket.gethostbyname(socket.gethostname())
         self.is_alive = False
@@ -32,8 +32,11 @@ class Client:
         self.is_alive = True
         # Open UDP listener
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        #self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        self.udp_socket.bind(("", self.udp_port))
+        # self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        #self.udp_socket.bind(("", self.udp_port))
+        self.udp_socket.bind((self.local_ip, self.udp_port))
+        print(f'local_ip: {self.local_ip}, udp_port: {self.udp_port}')
         print("“Client started, listening for offer requests...")
 
         while self.is_alive:
@@ -51,10 +54,19 @@ class Client:
     def __find_server(self):
         while self.is_alive:
             try:
+
                 data, address = self.udp_socket.recvfrom(self.buffer_size)
+
                 magic_cookie, message_type, server_name, server_port = struct.unpack(self.udp_format, data)
-            except struct.error:
+
+                # Decode the server_name_bytes into a string and strip any trailing null characters
+                server_name = server_name.decode('utf-8').rstrip('\x00')
+
+            except struct.error as e:
+                print("inside error in __find_server: ", e) #TODO: delete at end
                 continue
+
+
             if magic_cookie == self.magic_cookie and message_type == self.message_type:
                 print(f"Received offer from server {server_name} at address {address[0]}, attempting to connect...")
                 return address[0], int(server_port)
@@ -104,3 +116,8 @@ class Client:
             print("Server disconnected, listening for offer requests...")
             self.is_playing = False
 
+# def main():
+#     c = Client("Giler & Tlaten")
+#     c.start()
+#
+# main()
