@@ -107,6 +107,28 @@ class Game:
 
         # TODO: handle disqualified
 
+        # initialize variables to track the shortest time and index of the correct answer
+        shortest_time = float('inf')
+        correct_answer_index = None
+
+        # iterate over each player's response queue
+        for index, response_queue in enumerate(players_response):
+            # get the response tuple from the queue
+            response_tuple = response_queue.get()
+            # unpack the tuple
+            curr_answer, curr_time = response_tuple
+            # check if the answer is correct and time is shorter than the current shortest time
+            if curr_answer==self.current_question_answer and curr_time < shortest_time:
+                shortest_time = curr_time
+                correct_answer_index = index
+        # send to clients and print at server the message of the win
+        self.handle_message(self.get_winner_message(correct_answer_index))
+        
+
+
+
+
+
 
 
     def __send_message_to_players(self, message):
