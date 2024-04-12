@@ -22,7 +22,7 @@ class Client:
         self.udp_port = 13117
         self.server_ip = None
         self.tcp_socket = None
-        self.tcp_port = 0
+        self.tcp_port_server = 0
         self.buffer_size = 1024
         self.magic_cookie = 0xabcddcba
         self.message_type = 0x2
@@ -40,7 +40,7 @@ class Client:
         print("“Client started, listening for offer requests...")
 
         while self.is_alive:
-            self.server_ip, self.tcp_port = self.__find_server()
+            self.server_ip, self.tcp_port_server = self.__find_server()
             try:
                 self.connect_to_server()
             except:
@@ -77,7 +77,7 @@ class Client:
         # if not self.is_alive:
         #    raise Exception
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.tcp_socket.connect((self.server_ip, self.tcp_port))
+        self.tcp_socket.connect((self.server_ip, self.tcp_port_server))
         self.__send_message(self.client_name + "\n")
 
     def __game(self):
