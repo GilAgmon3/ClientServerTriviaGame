@@ -73,6 +73,11 @@ class Game:
         question_message += f"True or False: {self.current_question}\n"
         return question_message
 
+    def get_winner_message(self, winner_index):
+        player = self.__players[winner_index]
+        winner_message = f"{player.get_name()} is correct! {player.get_name()} wins!"
+        return winner_message
+
     def handle_message(self, message):
         self.__send_message_to_players(message)
         print(message)
@@ -157,6 +162,7 @@ class Game:
         # tuple of the answer according to player and response time
         answer_time_tuple = (player_answer, end - start)
         response.put(answer_time_tuple)
+
 
 
 
