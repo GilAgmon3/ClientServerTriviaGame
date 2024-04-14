@@ -78,6 +78,11 @@ class Game:
         winner_message = f"{player.get_name()} is correct! {player.get_name()} wins!"
         return winner_message
 
+    def get_summary_message(self, winner_index):
+        player = self.__players[winner_index]
+        summary_message = f"Game over! \n Congratulations to the winner: {player.get_name()}"
+        return summary_message
+
     def handle_message(self, message):
         self.__send_message_to_players(message)
         print(message)
@@ -123,18 +128,14 @@ class Game:
             # unpack the tuple
             curr_answer, curr_time = response_tuple
             # check if the answer is correct and time is shorter than the current shortest time
-            if curr_answer==self.current_question_answer and curr_time < shortest_time:
+            if curr_answer == self.current_question_answer and curr_time < shortest_time:
                 shortest_time = curr_time
                 correct_answer_index = index
         # send to clients and print at server the message of the win
         self.handle_message(self.get_winner_message(correct_answer_index))
-        
 
-
-
-
-
-
+        # finishing the game
+        self.__finish_game()
 
     def __send_message_to_players(self, message):
         for player in self.__players:
@@ -156,13 +157,17 @@ class Game:
             ans = ans.decode()
             player_answer = self.convert_answer(ans)
         except Exception:
-            #TODO: timeout exception?
+            # TODO: timeout exception?
             player_answer = None
         end = time.time()
         # tuple of the answer according to player and response time
         answer_time_tuple = (player_answer, end - start)
         response.put(answer_time_tuple)
 
-
-
+    def __finish_game(self):
+        self.__finish = True
+        self.__send_message_to_players("Server disconnected, listening for offer requests...")
+        for player in self.__players:
+            player.kill()
+        print("Game over, sending out offer requests...")
 
