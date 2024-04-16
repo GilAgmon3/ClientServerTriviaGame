@@ -2,10 +2,11 @@ import socket
 import struct
 import threading
 
+
 # Hello Tlaten, this is a test to see if GitHub works correctly.
 
 class Client:
-    def __init__(self, client_name):
+    def __init__(self, client_name: str):
         self.client_name = client_name
 
         # >: Indicates big-endian byte order.
@@ -27,14 +28,13 @@ class Client:
         self.magic_cookie = 0xabcddcba
         self.message_type = 0x2
 
-
     def start(self):
         self.is_alive = True
         # Open UDP listener
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        #self.udp_socket.bind(("", self.udp_port))
+        # self.udp_socket.bind(("", self.udp_port))
         self.udp_socket.bind((self.local_ip, self.udp_port))
         print(f'local_ip: {self.local_ip}, udp_port: {self.udp_port}')
         print("“Client started, listening for offer requests...")
@@ -63,29 +63,34 @@ class Client:
                 server_name = server_name.decode('utf-8').rstrip('\x00')
 
             except struct.error as e:
-                print("inside error in __find_server: ", e) #TODO: delete at end
+                print("inside error in __find_server: ", e)  # TODO: delete at end
                 continue
-
 
             if magic_cookie == self.magic_cookie and message_type == self.message_type:
                 print(f"Received offer from server {server_name} at address {address[0]}, attempting to connect...")
+                # TODO remove printing
+                print(int(server_port))
                 return address[0], int(server_port)
 
     def connect_to_server(self):
-
         # TODO: do we need this?
-        # if not self.is_alive:
-        #    raise Exception
+        if not self.is_alive:
+            raise Exception
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.connect((self.server_ip, self.tcp_port_server))
         self.__send_message(self.client_name + "\n")
 
     def __game(self):
+        # TODO: remove printing
+        print(f'client entered the game: {self.client_name}')
         self.is_playing = True
         receiver = threading.Thread(target=self.__receive_message)
         receiver.start()
-        self.__handle_user_inputs()
+        # self.__handle_user_inputs()
+        # TODO: i changed this to new thread instead of main thread
+        sender = threading.Thread(target=self.__handle_user_inputs)
         receiver.join()
+        sender.join()
 
     def __receive_message(self):
         while self.is_alive and self.is_playing:
@@ -108,6 +113,8 @@ class Client:
         while self.is_alive and self.is_playing:
             message = input()
             self.__send_message(str(message))
+            # TODO: remove printing
+            print(f"response was sent: {str(message)}")
 
     def __send_message(self, message):
         try:
