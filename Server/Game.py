@@ -52,6 +52,8 @@ class Game:
         # TODO: change this
         self.server_name = "Smelly Cat Squad"
 
+        self.__game()
+
     def generate_question(self) -> bool:
         '''
         Generate the next random question from question stack.
@@ -103,20 +105,27 @@ class Game:
         print("checkpoint 3")
 
     def __game(self):
-        # starting the game
-        self.handle_message(self.get_welcome_message())
+        # # starting the game
+        # self.handle_message(self.get_welcome_message())
+        # print("checkpoint 1")
+        # self.generate_question()
+        # print("checkpoint 2")
+        #
+        # self.handle_message(self.get_question_message())
+        # print("checkpoint 3")
 
-        self.generate_question()
-
-        self.handle_message(self.get_question_message())
+        # TODO: check with Gil
+        self.starting_game_messages()
 
         # initilize queue for each player's thread
         players_response = [queue.Queue() for _ in range(len(self.__players))]
+        print("checkpoint 4")
 
         # initilize array of thread, one for each player to handle player's response
         threads_arr = [threading.Thread(target=Game.__handle_player_question_answer,
                                         args=[self, player, response])
                        for player, response in zip(self.__players, players_response)]
+        print("checkpoint 5")
 
         # starting all players threads
         for thread in threads_arr:
@@ -124,11 +133,15 @@ class Game:
         # TODO: hande 10 sec timer for all players
         # TODO: remove join?
         # joining response threads for all players
+        print("checkpoint 6")
+
         for thread in threads_arr:
             thread.join()
+        print("checkpoint 7")
 
         for response in players_response:
             response.get()
+        print("checkpoint 8")
 
         # TODO: handle disqualified
 
@@ -144,13 +157,17 @@ class Game:
             curr_answer, curr_time = response_tuple
             # check if the answer is correct and time is shorter than the current shortest time
             if curr_answer == self.current_question_answer and curr_time < shortest_time:
+                print("checkpoint 1")
+
                 shortest_time = curr_time
                 correct_answer_index = index
         # send to clients and print at server the message of the win
         self.handle_message(self.get_winner_message(correct_answer_index))
+        print("checkpoint 1")
 
         # finishing the game
         self.__finish_game()
+        print("checkpoint 1")
 
     def __send_message_to_players(self, message: str):
         for player in self.__players:

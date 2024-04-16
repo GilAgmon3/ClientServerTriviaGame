@@ -141,7 +141,7 @@ class Server:
 
     def __strategy(self):
 
-        while self.is_alive:
+        while self.__is_alive:
             # start sending udp broadcast messages
             self.__start_broadcast()
             # create thread to manage client connections
