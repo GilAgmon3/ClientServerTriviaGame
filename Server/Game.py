@@ -3,6 +3,7 @@ import random
 import threading
 import time
 import socket
+from Player import Player
 
 
 class Game:
@@ -29,7 +30,7 @@ class Game:
         "Chandler's father is a famous novelist.": False
     }
 
-    def __init__(self, players):
+    def __init__(self, players: list[Player]):
         # Get the players of the game
         self.__players = players
 
@@ -51,7 +52,11 @@ class Game:
         # TODO: change this
         self.server_name = "Smelly Cat Squad"
 
-    def generate_question(self):
+    def generate_question(self) -> bool:
+        '''
+        Generate the next random question from question stack.
+        :return: True if there is question that wasn't asked already to generate, False else
+        '''
         if self.questions_stack:
             self.current_question = self.questions_stack.pop()
             self.current_question_answer = Game.trivia_questions[self.current_question]
@@ -59,7 +64,7 @@ class Game:
         else:
             return False
 
-    def get_welcome_message(self):
+    def get_welcome_message(self) -> str:
         welcome_message = f"Welcome to the {self.server_name} server, where we are answering trivia questions about 'Friends' TV show!\n"
 
         players_info = ""
@@ -68,24 +73,34 @@ class Game:
 
         return welcome_message + players_info
 
-    def get_question_message(self):
+    def get_question_message(self) -> str:
         question_message = "==\n"
         question_message += f"True or False: {self.current_question}\n"
         return question_message
 
-    def get_winner_message(self, winner_index):
+    def get_winner_message(self, winner_index: int) -> str:
         player = self.__players[winner_index]
         winner_message = f"{player.get_name()} is correct! {player.get_name()} wins!"
         return winner_message
 
-    def get_summary_message(self, winner_index):
+    def get_summary_message(self, winner_index: int) -> str:
         player = self.__players[winner_index]
         summary_message = f"Game over! \n Congratulations to the winner: {player.get_name()}"
         return summary_message
 
-    def handle_message(self, message):
+    def handle_message(self, message: str):
         self.__send_message_to_players(message)
         print(message)
+
+    def starting_game_messages(self):
+        # starting the game
+        self.handle_message(self.get_welcome_message())
+        print("checkpoint 1")
+        self.generate_question()
+        print("checkpoint 2")
+
+        self.handle_message(self.get_question_message())
+        print("checkpoint 3")
 
     def __game(self):
         # starting the game
@@ -137,11 +152,11 @@ class Game:
         # finishing the game
         self.__finish_game()
 
-    def __send_message_to_players(self, message):
+    def __send_message_to_players(self, message: str):
         for player in self.__players:
             player.get_socket().send(message.encode())
 
-    def convert_answer(self, answer):
+    def convert_answer(self, answer: str):
         '''
         :param answer: answer from player
         :return: True if the player answer any of True valid version, False else
@@ -149,8 +164,9 @@ class Game:
 
         return answer in ('T', 'Y', '1')
 
-    def __handle_player_question_answer(self, player, response):
+    def __handle_player_question_answer(self, player: Player, response: queue):
         # TODO set socket timeout?
+
         start = time.time()
         try:
             ans = player.get_socket().recv(1024)
@@ -163,6 +179,7 @@ class Game:
         # tuple of the answer according to player and response time
         answer_time_tuple = (player_answer, end - start)
         response.put(answer_time_tuple)
+        # return
 
     def __finish_game(self):
         self.__finish = True
@@ -170,4 +187,3 @@ class Game:
         for player in self.__players:
             player.kill()
         print("Game over, sending out offer requests...")
-
