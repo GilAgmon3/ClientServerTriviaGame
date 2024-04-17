@@ -97,12 +97,8 @@ class Game:
     def starting_game_messages(self):
         # starting the game
         self.handle_message(self.get_welcome_message())
-        print("checkpoint 1")
         self.generate_question()
-        print("checkpoint 2")
-
         self.handle_message(self.get_question_message())
-        print("checkpoint 3")
 
     def __game(self):
         # # starting the game
@@ -119,13 +115,11 @@ class Game:
 
         # initilize queue for each player's thread
         players_response = [queue.Queue() for _ in range(len(self.__players))]
-        print("checkpoint 4")
 
         # initilize array of thread, one for each player to handle player's response
         threads_arr = [threading.Thread(target=Game.__handle_player_question_answer,
                                         args=[self, player, response])
                        for player, response in zip(self.__players, players_response)]
-        print("checkpoint 5")
 
         # starting all players threads
         for thread in threads_arr:
@@ -133,14 +127,16 @@ class Game:
         # TODO: hande 10 sec timer for all players
         # TODO: remove join?
         # joining response threads for all players
-        print("checkpoint 6")
 
         for thread in threads_arr:
             thread.join()
         print("checkpoint 7")
 
         for response in players_response:
-            response.get()
+            # response.get()
+            # TODO: remove this later- debug
+            response_data = response.get()
+            print("Got response:", response_data)
         print("checkpoint 8")
 
         # TODO: handle disqualified
@@ -155,19 +151,21 @@ class Game:
             response_tuple = response_queue.get()
             # unpack the tuple
             curr_answer, curr_time = response_tuple
+            # TODO: remove printing
+            print(f'index: {index}, answer: {curr_answer}, time: {curr_time}')
             # check if the answer is correct and time is shorter than the current shortest time
             if curr_answer == self.current_question_answer and curr_time < shortest_time:
-                print("checkpoint 1")
+                print("checkpoint player is right")
 
                 shortest_time = curr_time
                 correct_answer_index = index
         # send to clients and print at server the message of the win
         self.handle_message(self.get_winner_message(correct_answer_index))
-        print("checkpoint 1")
+        print("checkpoint after announcing the winner")
 
         # finishing the game
         self.__finish_game()
-        print("checkpoint 1")
+        print("checkpoint after finishing the game")
 
     def __send_message_to_players(self, message: str):
         for player in self.__players:
@@ -182,19 +180,23 @@ class Game:
         return answer in ('T', 'Y', '1')
 
     def __handle_player_question_answer(self, player: Player, response: queue):
-        # TODO set socket timeout?
-
+        # TODO need the set socket timeout?
+        player.get_socket().settimeout(10)
         start = time.time()
         try:
             ans = player.get_socket().recv(1024)
             ans = ans.decode()
             player_answer = self.convert_answer(ans)
+            # TODO: remove printing
+            print(f'Player {player.get_name()} answered {player_answer}')
         except Exception:
             # TODO: timeout exception?
             player_answer = None
         end = time.time()
         # tuple of the answer according to player and response time
         answer_time_tuple = (player_answer, end - start)
+        # TODO remove
+        print(answer_time_tuple)
         response.put(answer_time_tuple)
         # return
 
