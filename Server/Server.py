@@ -88,7 +88,7 @@ class Server:
         # Kill UDP
         self.udp_socket.close()
 
-        # TODO: added killing clients threads
+        # TODO: added killing clients threads, check if its ok and needed
         for player in self.players:
             player.kill()
 
@@ -113,6 +113,7 @@ class Server:
     #         #     self.__strategy()
 
     def __manage_clients(self):
+        # TODO: 1. Add handling situation with one player or less, 2. Check that its working properly
         while self.__is_alive:
             disconnected_players = []
             for player in self.players:
@@ -138,45 +139,81 @@ class Server:
             for disconnected_player in disconnected_players:
                 self.players.remove(disconnected_player)
 
-
+    # TODO: this is the same function but with different approach for the implementation. Need to check and decide
     def __strategy(self):
-
+        # TODO: remove all the printings
         while self.__is_alive:
-            # start sending udp broadcast messages
+            # Start sending UDP broadcast messages
             self.__start_broadcast()
-            # create thread to manage client connections
-            # TODO: need this call to manage_players
+            # Create thread to manage client connections
             # threading.Thread(target=self.__manage_clients).start()
             # Wait for players to join or 10 seconds to elapse
+            self.tcp_socket.settimeout(10)  # Set socket timeout to 10 seconds
+            # TODO: remove time handling and prints later
+            start_time = time.time()
             while True:
                 try:
                     # Accept incoming TCP connections
                     new_client = self.tcp_socket.accept()  # (connection socket, address)
-                    print("client accepted")
                     name = new_client[0].recv(self.buffer_size).decode()
-                    print(f"name: {name}")
+                    print(f"Client accepted. Client's name: {name}")
                     player = Player(new_client[0], new_client[1], name)
                     self.players.append(player)
-                    print(f"Time number 1: {time.time()}")
-                    continue
+                    print(f"Time from the beginning of count: {time.time()-start_time}")
+                    start_time = time.time()
                 except socket.timeout:
-                    if not self.__is_alive:
-                        break
-                    if len(self.players) >= 2:
-                        self.__stop_broadcast()
-                        print(f"Time number 2: {time.time()}")
-                        Game(self.players)
-                        # return
-                    # TODO: change else- what if only one client is connected but 10 sec passed without new client?
+                    if len(self.players) == 0:
+                        # No players connected
+                        break  # Back to step 1
+                    elif len(self.players) == 1:
+                        # One player connected, cannot start the game
+                        print("Only one player connected, waiting for more players...")
+                        # self.players.clear()  # Clear the players list
+                        break  # Back to step 1
                     else:
-                        print("socket timed out with less than 2 players")
+                        # Two or more players connected, start the game
+                        self.__stop_broadcast()
+                        print("Starting the game...")
+                        Game(self.players)
+                        self.players.clear()  # Clear the players list
+                        break  # Proceed to the next game
 
-
-
-        # TODO: check this- in case of server disconnect, we want to call stop method
-        self.stop()
-
-        # TODO: what if only one player and timed out?
+    # TODO: this is the original implementation
+    # def __strategy(self):
+    #
+    #     while self.__is_alive:
+    #         # start sending udp broadcast messages
+    #         self.__start_broadcast()
+    #         # create thread to manage client connections
+    #         # TODO: need this call to manage_players (new thread)
+    #         # threading.Thread(target=self.__manage_clients).start()
+    #         # Wait for players to join or 10 seconds to elapse
+    #         while True:
+    #             try:
+    #                 # Accept incoming TCP connections
+    #                 new_client = self.tcp_socket.accept()  # (connection socket, address)
+    #                 print("client accepted")
+    #                 name = new_client[0].recv(self.buffer_size).decode()
+    #                 print(f"name: {name}")
+    #                 player = Player(new_client[0], new_client[1], name)
+    #                 self.players.append(player)
+    #                 print(f"Time number 1: {time.time()}")
+    #                 continue
+    #             except socket.timeout:
+    #                 if not self.__is_alive:
+    #                     break
+    #                 if len(self.players) >= 2:
+    #                     self.__stop_broadcast()
+    #                     print(f"Time number 2: {time.time()}")
+    #                     Game(self.players)
+    #                     # return
+    #                 # TODO: change else- what if only one client is connected but 10 sec passed without new client?
+    #                 # TODO: else need also to handle situation where there is no clients at all
+    #                 else:
+    #                     print("socket timed out with less than 2 players")
+    #
+    #     # TODO: check this- in case of server disconnect, we want to call stop method- here?
+    #     self.stop()
 
 
 if __name__ == '__main__':
