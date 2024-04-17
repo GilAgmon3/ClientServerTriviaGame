@@ -91,32 +91,31 @@ class Game:
         return summary_message
 
     def handle_message(self, message: str):
+        """
+        param message: message from game's server
+        Handle messages that is relevant for both server and clients-prints the message in all the consoles
+        """
         self.__send_message_to_players(message)
         print(message)
 
     def starting_game_messages(self):
         # starting the game
         self.handle_message(self.get_welcome_message())
+        self.new_question_message()
+
+    def new_question_message(self):
         self.generate_question()
         self.handle_message(self.get_question_message())
 
-    def __game(self):
-        # # starting the game
-        # self.handle_message(self.get_welcome_message())
-        # print("checkpoint 1")
-        # self.generate_question()
-        # print("checkpoint 2")
-        #
-        # self.handle_message(self.get_question_message())
-        # print("checkpoint 3")
-
-        # TODO: check with Gil
-        self.starting_game_messages()
-
-        # initilize queue for each player's thread
+    def handling_players_answer_threads(self) -> list[queue]:
+        """
+        This method creates thread for each player to handle the player's response and handle all players responses.
+        :return: list of queues, each one contains player's answer and response time for this round of game.
+        """
+        # initialize queue for each player's thread
         players_response = [queue.Queue() for _ in range(len(self.__players))]
 
-        # initilize array of thread, one for each player to handle player's response
+        # initialize array of thread, one for each player to handle player's response
         threads_arr = [threading.Thread(target=Game.__handle_player_question_answer,
                                         args=[self, player, response])
                        for player, response in zip(self.__players, players_response)]
@@ -130,17 +129,10 @@ class Game:
 
         for thread in threads_arr:
             thread.join()
-        print("checkpoint 7")
 
-        for response in players_response:
-            # response.get()
-            # TODO: remove this later- debug
-            response_data = response.get()
-            print("Got response:", response_data)
-        print("checkpoint 8")
+        return players_response
 
-        # TODO: handle disqualified
-
+    def find_winner(self, players_response: list[queue]) -> int:
         # initialize variables to track the shortest time and index of the correct answer
         shortest_time = float('inf')
         correct_answer_index = None
@@ -155,17 +147,26 @@ class Game:
             print(f'index: {index}, answer: {curr_answer}, time: {curr_time}')
             # check if the answer is correct and time is shorter than the current shortest time
             if curr_answer == self.current_question_answer and curr_time < shortest_time:
-                print("checkpoint player is right")
-
                 shortest_time = curr_time
                 correct_answer_index = index
+            return correct_answer_index
+
+    def __game(self):
+        # TODO: handle disqualified
+
+        # TODO: check with Gil
+        self.starting_game_messages()
+        players_response = self.handling_players_answer_threads()
+        correct_answer_index = self.find_winner(players_response)
+
+        # In case there is no winner-continue the game
+        # if correct_answer_index is None:
+
         # send to clients and print at server the message of the win
         self.handle_message(self.get_winner_message(correct_answer_index))
-        print("checkpoint after announcing the winner")
 
         # finishing the game
         self.__finish_game()
-        print("checkpoint after finishing the game")
 
     def __send_message_to_players(self, message: str):
         for player in self.__players:
@@ -203,6 +204,7 @@ class Game:
     def __finish_game(self):
         self.__finish = True
         self.__send_message_to_players("Server disconnected, listening for offer requests...")
-        for player in self.__players:
-            player.kill()
+        # TODO: i dont think we need to kill player's threads
+        # for player in self.__players:
+        #     player.kill()
         print("Game over, sending out offer requests...")
