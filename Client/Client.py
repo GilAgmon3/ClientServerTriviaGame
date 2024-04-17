@@ -86,15 +86,17 @@ class Client:
         self.is_playing = True
         receiver = threading.Thread(target=self.__receive_message)
         receiver.start()
-        # self.__handle_user_inputs()
-        # TODO: i changed this to new thread instead of main thread
-        sender = threading.Thread(target=self.__handle_user_inputs)
+        self.__handle_user_inputs()
+        # TODO: need to change the call to handle_user_input to new thread instead of main thread ?
+        # sender = threading.Thread(target=self.__handle_user_inputs)
+        # sender.start()
         receiver.join()
-        sender.join()
+        # sender.join()
 
     def __receive_message(self):
         while self.is_alive and self.is_playing:
             try:
+                self.tcp_socket.settimeout(1)
                 message = self.tcp_socket.recv(self.buffer_size)
                 if message:
                     print(message.decode())
