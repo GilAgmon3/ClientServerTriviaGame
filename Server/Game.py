@@ -34,7 +34,7 @@ class Game:
         # Get the players of the game
         self.__players = players
 
-        # Create an empty stack
+        # Create questions stack
         self.questions_stack = list(Game.trivia_questions.keys())
 
         # Shuffle the keys randomly
@@ -42,10 +42,6 @@ class Game:
 
         self.__finish = False
 
-        # TODO: why do we need this in our init?
-        # random_question = self.generate_question()
-        # self.__question = random_question[0]
-        # self.__answer = random_question[1]
         self.current_question = None
         self.current_question_answer = None
 
@@ -133,6 +129,10 @@ class Game:
         return players_response
 
     def find_winner(self, players_response: list[queue]) -> int:
+        """
+        :param players_response:  List of queues, each one contains player's answer and response time for this round of game.
+        :return: The winner's index if there is a winner, None if there is no winner
+        """
         # initialize variables to track the shortest time and index of the correct answer
         shortest_time = float('inf')
         correct_answer_index = None
@@ -149,7 +149,7 @@ class Game:
             if curr_answer == self.current_question_answer and curr_time < shortest_time:
                 shortest_time = curr_time
                 correct_answer_index = index
-            return correct_answer_index
+        return correct_answer_index
 
     def __game(self):
         # TODO: handle disqualified
@@ -160,7 +160,11 @@ class Game:
         correct_answer_index = self.find_winner(players_response)
 
         # In case there is no winner-continue the game
-        # if correct_answer_index is None:
+        while correct_answer_index is None:
+            self.new_question_message()
+            players_response = self.handling_players_answer_threads()
+            correct_answer_index = self.find_winner(players_response)
+            print(f'correct answer index: {correct_answer_index}')
 
         # send to clients and print at server the message of the win
         self.handle_message(self.get_winner_message(correct_answer_index))
@@ -181,7 +185,7 @@ class Game:
         return answer in ('T', 'Y', '1')
 
     def __handle_player_question_answer(self, player: Player, response: queue):
-        # TODO need the set socket timeout?
+        # TODO: need the set socket timeout?
         player.get_socket().settimeout(10)
         start = time.time()
         try:
@@ -203,6 +207,7 @@ class Game:
 
     def __finish_game(self):
         self.__finish = True
+        # TODO: for some reason this message is printed twice only at LOSING client's console
         self.__send_message_to_players("Server disconnected, listening for offer requests...")
         # TODO: i dont think we need to kill player's threads
         # for player in self.__players:
