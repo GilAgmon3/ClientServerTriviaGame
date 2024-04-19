@@ -208,8 +208,8 @@ class Game:
     def __finish_game(self):
         self.__finish = True
         # TODO: for some reason this message is printed twice only at LOSING client's console
-        self.__send_message_to_players("Server disconnected, listening for offer requests...")
+        self.__send_message_to_players("Server disconnected, listening for offer requests...3")
         # TODO: i dont think we need to kill player's threads
-        # for player in self.__players:
-        #     player.kill()
+        for player in self.__players:
+            player.kill()
         print("Game over, sending out offer requests...")

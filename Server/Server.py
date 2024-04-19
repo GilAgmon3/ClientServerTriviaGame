@@ -10,7 +10,6 @@ from Player import Player
 
 class Server:
     def __init__(self):
-        self.__is_alive = False
         self.is_broadcasting = False
         self.local_ip = socket.gethostbyname(socket.gethostname())
         self.udp_socket = None
@@ -19,7 +18,6 @@ class Server:
         self.udp_format = ">IB32sH"
         # self.tcp_socket, self.tcp_port = self.__find_available_port(1024)
         self.tcp_socket = None
-        # TODO: need to change server's port to dynamic allocation
         self.tcp_port = None
         self.buffer_size = 1024
         self.magic_cookie = 0xabcddcba
@@ -33,6 +31,7 @@ class Server:
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     # TODO: check if keep localhost or empty
+                    # s.bind(("", port))
                     s.bind(('localhost', port))
                     # TODO i changed to returning only port
                     return port
@@ -40,23 +39,45 @@ class Server:
                 port += 1
 
     def start(self):
-        self.__is_alive = True
-        # open udp connection
-        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
-        # open tcp connection
-        self.tcp_port = self.__find_available_port(1025)
-        self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-        # self.tcp_socket.bind((self.local_ip, self.tcp_port))  # TODO: self.local_ip was ""
-        self.tcp_socket.bind(("", self.tcp_port))  # TODO: "" was self.local_ip
-        self.tcp_socket.settimeout(10)  # TODO: need it?
-        self.tcp_socket.listen()
-
         print("Server started, listening on IP address " + self.local_ip)
-        # start strategy
-        self.__strategy()
+
+        while True:
+            print("started server again")
+            # open udp connection
+            self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            # open tcp connection
+            self.tcp_port = self.__find_available_port(1025)
+            self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+            self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+
+            # self.tcp_socket.bind((self.local_ip, self.tcp_port))  # TODO: self.local_ip was ""
+            self.tcp_socket.bind(("", self.tcp_port))  # TODO: "" was self.local_ip
+            self.tcp_socket.settimeout(10)  # TODO: need it?
+            self.tcp_socket.listen()
+
+            # start strategy
+
+            self.__strategy()
+
+    # def start(self):
+    #     # open udp connection
+    #     self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    #     self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    #     # open tcp connection
+    #     self.tcp_port = self.__find_available_port(1025)
+    #     self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    #     self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    #
+    #     # self.tcp_socket.bind((self.local_ip, self.tcp_port))  # TODO: self.local_ip was ""
+    #     self.tcp_socket.bind(("", self.tcp_port))  # TODO: "" was self.local_ip
+    #     self.tcp_socket.settimeout(10)  # TODO: need it?
+    #     self.tcp_socket.listen()
+    #
+    #     print("Server started, listening on IP address " + self.local_ip)
+    #     # start strategy
+    #
+    #     self.__strategy()
 
     def __start_broadcast(self):
         self.is_broadcasting = True
@@ -74,15 +95,18 @@ class Server:
             time.sleep(1)
 
     def __stop_broadcast(self):
-        self.__is_broadcasting = False
+        self.is_broadcasting = False
 
     def stop(self):
-        self.__is_alive = False
-        self.__stop_broadcast()
         # kill tcp
         self.tcp_socket.close()
+        self.tcp_socket = None
         # Kill UDP
         self.udp_socket.close()
+        self.udp_socket = None
+        # for c in self.clients:
+        #     c.stop()
+        self.clients.clear()  # Clear the players list
 
         # TODO: added killing clients threads, check if its ok and needed
         # for player in self.players:
@@ -110,7 +134,7 @@ class Server:
 
     def __manage_clients(self):
         # TODO: 1. Add handling situation with one player or less, 2. Check that its working properly
-        while self.__is_alive:
+        while True:
             disconnected_players = []
             for player in self.players:
                 try:
@@ -138,52 +162,42 @@ class Server:
     # TODO: this is the same function but with different approach for the implementation. Need to check and decide
     def __strategy(self):
         # TODO: 1. remove all the printings 2. check if lines before loop should stay there or not 3. manage
-        # Start sending UDP broadcast messages
-        # self.__start_broadcast()
-        # Create thread to manage client connections
-        # manage_clients_thread = threading.Thread(target=self.__manage_clients)
-        # manage_clients_thread.start()
-        # print("checkpoint")
         # TODO: instead of inside
+        # self.__start_broadcast()
+        # Start sending UDP broadcast messages
         self.__start_broadcast()
-
-        while self.__is_alive:
-            # Start sending UDP broadcast messages
-            # self.__start_broadcast()
-            # # Create thread to manage client connections
-            # manage_clients_thread = threading.Thread(target=self.__manage_clients)
-            # manage_clients_thread.start()
-            # print("checkpoint")
-            # Wait for players to join or 10 seconds to elapse
-            self.tcp_socket.settimeout(10)  # Set socket timeout to 10 seconds
-            # TODO: remove time handling and prints later
-            start_time = time.time()
-            while True:
-                try:
-                    # Accept incoming TCP connections
-                    new_client = self.tcp_socket.accept()  # (connection socket, address)
-                    name = new_client[0].recv(self.buffer_size).decode()
-                    print(f"Client accepted. Client's name: {name}")
-                    player = Player(new_client[0], new_client[1], name)
-                    self.players.append(player)
-                    print(f"Time from the beginning of count: {time.time()-start_time}")
-                    start_time = time.time()
-                except socket.timeout:
-                    if len(self.players) == 0:
-                        # No players connected
-                        break  # Back to step 1
-                    elif len(self.players) == 1:
-                        # One player connected, cannot start the game
-                        print("Only one player connected, waiting for more players...")
-                        # self.players.clear()  # Clear the players list
-                        break  # Back to step 1
-                    else:
-                        # Two or more players connected, start the game
-                        self.__stop_broadcast()
-                        print("Starting the game...")
-                        Game(self.players)
-                        self.players.clear()  # Clear the players list
-                        break  # Proceed to the next game
+        # Wait for players to join or 10 seconds to elapse
+        self.tcp_socket.settimeout(10)  # Set socket timeout to 10 seconds
+        # TODO: remove time handling and prints later
+        start_time = time.time()
+        players = []
+        while True:
+            try:
+                # Accept incoming TCP connections
+                new_client = self.tcp_socket.accept()  # (connection socket, address)
+                name = new_client[0].recv(self.buffer_size).decode()
+                print(f"Client accepted. Client's name: {name}")
+                player = Player(new_client[0], new_client[1], name)
+                players.append(player)
+               # print(f"Time from the beginning of count: {time.time()-start_time}")
+                start_time = time.time()
+            except socket.timeout:
+                if len(players) == 0:
+                    # No players connected
+                    break  # Back to step 1
+                elif len(players) == 1:
+                    # One player connected, cannot start the game
+                    print("Only one player connected, waiting for more players...")
+                    # self.players.clear()  # Clear the players list
+                    break  # Back to step 1
+                else:
+                    # Two or more players connected, start the game
+                    self.__stop_broadcast()
+                    print("Starting the game...")
+                    Game(players)
+                    # self.stop()
+                    # TODO: Statistics
+                    break  # Proceed to the next game
 
     # TODO: this is the original implementation
     # def __strategy(self):

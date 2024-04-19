@@ -16,3 +16,4 @@ class Player:
 
     def kill(self):
         self.__socket.close()
+
