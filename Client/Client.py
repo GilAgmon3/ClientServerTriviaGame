@@ -30,6 +30,28 @@ class Client:
 
     def start(self):
         self.is_alive = True
+        # self.listening_for_offers()
+        # Open UDP listener
+        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.udp_socket.bind(("", self.udp_port))
+        # self.udp_socket.bind((self.local_ip, self.udp_port))
+        print(f'local_ip: {self.local_ip}, udp_port: {self.udp_port}')
+
+        print("Client started, listening for offer requests...")
+
+        while self.is_alive:
+            self.server_ip, self.tcp_port_server = self.__find_server()
+            try:
+                self.create_tcp_connection()
+            except:
+                print("Connection failed...")
+                continue
+            self.__game()
+    # def connect_to_server(self):
+
+    def listening_for_offers(self):
         # Open UDP listener
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
@@ -37,16 +59,6 @@ class Client:
         # self.udp_socket.bind(("", self.udp_port))
         self.udp_socket.bind((self.local_ip, self.udp_port))
         print(f'local_ip: {self.local_ip}, udp_port: {self.udp_port}')
-        print("“Client started, listening for offer requests...")
-
-        while self.is_alive:
-            self.server_ip, self.tcp_port_server = self.__find_server()
-            try:
-                self.connect_to_server()
-            except:
-                print("Connection failed...")
-                continue
-            self.__game()
 
     def stop(self):
         self.is_alive = False
@@ -56,7 +68,7 @@ class Client:
             try:
 
                 data, address = self.udp_socket.recvfrom(self.buffer_size)
-
+                print("udp received")
                 magic_cookie, message_type, server_name, server_port = struct.unpack(self.udp_format, data)
 
                 # Decode the server_name_bytes into a string and strip any trailing null characters
@@ -72,10 +84,14 @@ class Client:
                 print(int(server_port))
                 return address[0], int(server_port)
 
-    def connect_to_server(self):
+    def create_tcp_connection(self):
+        """
+        Connecting to server by TCP
+        """
         # TODO: do we need this?
         if not self.is_alive:
             raise Exception
+
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.connect((self.server_ip, self.tcp_port_server))
         self.__send_message(self.client_name + "\n")
@@ -96,6 +112,7 @@ class Client:
     def __receive_message(self):
         while self.is_alive and self.is_playing:
             try:
+                # timeout is for rcv will not block input handling
                 self.tcp_socket.settimeout(1)
                 message = self.tcp_socket.recv(self.buffer_size)
                 if message:
@@ -113,17 +130,21 @@ class Client:
     def __handle_user_inputs(self):
         # TODO: do we need a while here?
         while self.is_alive and self.is_playing:
-            message = input()
-            self.__send_message(str(message))
-            # TODO: remove printing
-            print(f"response was sent: {str(message)}")
+            try:
+                message = input()
+                self.__send_message(str(message))
+            except Exception as e:
+                # TODO: decide how to handle
+                continue
 
     def __send_message(self, message):
         try:
             self.tcp_socket.send(message.encode())
         except:
-            print("Server disconnected, listening for offer requests...")
+            # print("Server disconnected, listening for offer requests...")
             self.is_playing = False
+            # TODO: check if its the right place
+            self.start()
 
 # def main():
 #     c = Client("Giler & Tlaten")

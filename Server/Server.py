@@ -20,7 +20,7 @@ class Server:
         # self.tcp_socket, self.tcp_port = self.__find_available_port(1024)
         self.tcp_socket = None
         # TODO: need to change server's port to dynamic allocation
-        self.tcp_port = 1025
+        self.tcp_port = None
         self.buffer_size = 1024
         self.magic_cookie = 0xabcddcba
         self.message_type = 0x2
@@ -29,8 +29,7 @@ class Server:
 
     def __find_available_port(self, start_port):
         port = start_port
-
-        while (True):
+        while True:
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
                     # TODO: check if keep localhost or empty
@@ -46,13 +45,12 @@ class Server:
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
         # open tcp connection
-        # TODO
         self.tcp_port = self.__find_available_port(1025)
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
 
-        self.tcp_socket.bind((self.local_ip, self.tcp_port))  # TODO: "" was self.local_ip
-        # self.tcp_socket.bind(("", self.tcp_port))  # TODO: "" was self.local_ip
+        # self.tcp_socket.bind((self.local_ip, self.tcp_port))  # TODO: self.local_ip was ""
+        self.tcp_socket.bind(("", self.tcp_port))  # TODO: "" was self.local_ip
         self.tcp_socket.settimeout(10)  # TODO: need it?
         self.tcp_socket.listen()
 
@@ -70,8 +68,6 @@ class Server:
         server_name_bytes = self.server_name.encode('utf-8')
         # print(f'udp_format: {self.udp_format}, magic_cookie: {self.magic_cookie}, message_type: {self.message_type}, server_name: {self.server_name},  tcp_port:  {self.tcp_port}')
         message = struct.pack(self.udp_format, self.magic_cookie, self.message_type, server_name_bytes, self.tcp_port)
-        # TODO remove prints
-        print(self.tcp_port)
         while self.is_broadcasting:
             self.udp_socket.sendto(message, (self.udp_ip, self.udp_port))
             # print(f'Broadcasting: message: {message}, udp- ip+port: {self.udp_ip}, {self.udp_port}')
@@ -89,8 +85,8 @@ class Server:
         self.udp_socket.close()
 
         # TODO: added killing clients threads, check if its ok and needed
-        for player in self.players:
-            player.kill()
+        # for player in self.players:
+        #     player.kill()
 
     # TODO: added this method, need to check it. This method is for checking clients connections while server is alive
     # this implementation printed pings non-stop at client's console
@@ -141,12 +137,23 @@ class Server:
 
     # TODO: this is the same function but with different approach for the implementation. Need to check and decide
     def __strategy(self):
-        # TODO: remove all the printings
+        # TODO: 1. remove all the printings 2. check if lines before loop should stay there or not 3. manage
+        # Start sending UDP broadcast messages
+        # self.__start_broadcast()
+        # Create thread to manage client connections
+        # manage_clients_thread = threading.Thread(target=self.__manage_clients)
+        # manage_clients_thread.start()
+        # print("checkpoint")
+        # TODO: instead of inside
+        self.__start_broadcast()
+
         while self.__is_alive:
             # Start sending UDP broadcast messages
-            self.__start_broadcast()
-            # Create thread to manage client connections
-            # threading.Thread(target=self.__manage_clients).start()
+            # self.__start_broadcast()
+            # # Create thread to manage client connections
+            # manage_clients_thread = threading.Thread(target=self.__manage_clients)
+            # manage_clients_thread.start()
+            # print("checkpoint")
             # Wait for players to join or 10 seconds to elapse
             self.tcp_socket.settimeout(10)  # Set socket timeout to 10 seconds
             # TODO: remove time handling and prints later
