@@ -87,8 +87,9 @@ class Server:
 
         # Encode the server name string into bytes using UTF-8 encoding
         server_name_bytes = self.server_name.encode('utf-8')
-        # print(f'udp_format: {self.udp_format}, magic_cookie: {self.magic_cookie}, message_type: {self.message_type}, server_name: {self.server_name},  tcp_port:  {self.tcp_port}')
+        print(f'udp_format: {self.udp_format}, magic_cookie: {self.magic_cookie}, message_type: {self.message_type}, server_name: {self.server_name},  tcp_port:  {self.tcp_port}')
         message = struct.pack(self.udp_format, self.magic_cookie, self.message_type, server_name_bytes, self.tcp_port)
+        print(f'len message {len(message)}')
         while self.is_broadcasting:
             self.udp_socket.sendto(message, (self.udp_ip, self.udp_port))
             # print(f'Broadcasting: message: {message}, udp- ip+port: {self.udp_ip}, {self.udp_port}')

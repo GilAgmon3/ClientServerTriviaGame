@@ -38,14 +38,13 @@ class Client:
         self.is_alive = True
         print("Client started, listening for offer requests...")
         while True:
-            print("client started again")
             # Open UDP listener
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             # self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
             self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             self.udp_socket.bind(("", self.udp_port))
             # self.udp_socket.bind((self.local_ip, self.udp_port))
-            print(f'local_ip: {self.local_ip}, udp_port: {self.udp_port}')
+            # print(f'local_ip: {self.local_ip}, udp_port: {self.udp_port}')
             while self.is_alive:
                 self.server_ip, self.tcp_port_server = self.__find_server()
                 try:
@@ -66,14 +65,13 @@ class Client:
         self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.udp_socket.bind(("", self.udp_port))
         # self.udp_socket.bind((self.local_ip, self.udp_port))
-        print(f'local_ip: {self.local_ip}, udp_port: {self.udp_port}')
+        # print(f'local_ip: {self.local_ip}, udp_port: {self.udp_port}')
 
     def __find_server(self):
         while self.is_alive:
             try:
 
                 data, address = self.udp_socket.recvfrom(self.buffer_size)
-                print("udp received")
                 magic_cookie, message_type, server_name, server_port = struct.unpack(self.udp_format, data)
 
                 # Decode the server_name_bytes into a string and strip any trailing null characters
@@ -85,8 +83,6 @@ class Client:
 
             if magic_cookie == self.magic_cookie and message_type == self.message_type:
                 print(f"Received offer from server {server_name} at address {address[0]}, attempting to connect...")
-                # TODO remove printing
-                print(int(server_port))
                 return address[0], int(server_port)
 
     def create_tcp_connection(self):
@@ -99,7 +95,8 @@ class Client:
 
         self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.tcp_socket.connect((self.server_ip, self.tcp_port_server))
-        self.__send_message(self.client_name + "\n")
+        # self.__send_message(self.client_name + "\n")
+        self.__send_message(self.client_name)
 
     def __game(self):
         self.is_playing = True
@@ -122,15 +119,14 @@ class Client:
                 if message:
                     print(message.decode())
                 else:
-                    print("Server disconnected, listening for offer requests...1")
+                    print("Server disconnected, listening for offer requests...")
                     self.is_playing = False
             except socket.timeout:
                 continue
             except:
-                print("Server disconnected, listening for offer requests...2")
+                print("Server disconnected, listening for offer requests...")
                 self.is_playing = False
                 # return
-        print(f'Finished recieving messages, self.is_playing is {self.is_playing}')
 
     import msvcrt
     import time
@@ -164,6 +160,28 @@ class Client:
 
         print(f'Finished handling inputs, self.is_playing is {self.is_playing}')
 
+    def __handle_user_inputs(self):
+        while self.is_alive and self.is_playing:
+            try:
+                input_thread = threading.Thread(target=self.__get_input)
+                input_thread.start()
+
+                input_thread.join(timeout=10)  # Wait for 1 second for the input thread to finish
+                if input_thread.is_alive():
+                    raise TimeoutError("Input timeout reached")
+            except TimeoutError as te:
+                continue
+            except Exception as e:
+                continue
+
+    def __get_input(self):
+        try:
+            message = input()
+            self.__send_message(str(message))
+        except EOFError:
+            pass  # Handle end-of-file error if necessary
+
+
     # def __handle_user_inputs(self):
     #     # TODO: do we need a while here?
     #     print(
@@ -182,44 +200,7 @@ class Client:
     #             continue
     #     print(f'Finished handling inputs, self.is_playing is {self.is_playing}')
 
-    # def __input_listener(self, input_queue):
-    #     while True:
-    #         try:
-    #             # Note: This will still block, we need to manage the thread termination
-    #             # outside, such as by sending a termination signal or similar.
-    #             message = input()
-    #             input_queue.put(message)
-    #         except EOFError:
-    #             break  # Handle end of input, such as Ctrl-D
-    #
-    # def __handle_user_inputs(self):
-    #     print(f"at the start of __handle_user_inputs when is_alive is {self.is_alive} and is playing is {self.is_playing}")
-    #
-    #     input_queue = queue.Queue()
-    #     listener_thread = threading.Thread(target=self.__input_listener, args=(input_queue,))
-    #     listener_thread.start()
-    #
-    #     while self.is_alive and self.is_playing:
-    #         try:
-    #             #print(f"inside __handle_user_inputs, is_alive is {self.is_alive} and is playing is {self.is_playing}")
-    #
-    #             message = input_queue.get(timeout=0.5)
-    #             self.__send_message(message)
-    #
-    #             #print(f"inside __handle_user_inputs, sent message, is_alive is {self.is_alive} and is playing is {self.is_playing}")
-    #
-    #
-    #         except queue.Empty:
-    #             # No input received, loop back and check conditions
-    #             if not self.is_playing:
-    #                 break
-    #
-    #     print(f'Finished handling inputs, self.is_playing is {self.is_playing}')
-    #     listener_thread.  # Clean up the thread
-    #     # listener_thread.join()  # Clean up the thread
-    #     print("bye bye amigos")
-    #
-    # Note: Ensure to safely terminate the listener_thread when exiting.
+
 
     def __send_message(self, message):
         try:

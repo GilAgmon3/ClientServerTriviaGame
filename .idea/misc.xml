@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="ClientServerTriviaGame" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="ClientServerTriviaGame" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="ClientServerTriviaGame2" project-jdk-type="Python SDK" />
 </project>
