@@ -72,6 +72,9 @@ class Client:
             try:
 
                 data, address = self.udp_socket.recvfrom(self.buffer_size)
+                print(len(data))
+                if len(data) != 39:
+                    continue
                 magic_cookie, message_type, server_name, server_port = struct.unpack(self.udp_format, data)
 
                 # Decode the server_name_bytes into a string and strip any trailing null characters
@@ -107,7 +110,6 @@ class Client:
         # sender = threading.Thread(target=self.__handle_user_inputs)
         # sender.start()
         receiver.join()
-        print("After receiver join")
         # sender.join()
 
     def __receive_message(self):
