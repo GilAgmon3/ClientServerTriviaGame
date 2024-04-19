@@ -161,6 +161,10 @@ class Game:
 
         # In case there is no winner-continue the game
         while correct_answer_index is None:
+            print(f'self finish {self.__finish}')
+            if not self.__finish:
+                self.__finish_game()
+                return
             self.new_question_message()
             players_response = self.handling_players_answer_threads()
             correct_answer_index = self.find_winner(players_response)
@@ -173,8 +177,25 @@ class Game:
         self.__finish_game()
 
     def __send_message_to_players(self, message: str):
+        players_to_remove = []
+
+        # Iterate over all players
         for player in self.__players:
-            player.get_socket().send(message.encode())
+            try:
+                # Attempt to send the message
+                player.get_socket().send(message.encode())
+            except Exception as e:
+                # If an error occurs, log the error and mark the player for removal
+                players_to_remove.append(player)
+
+        # Remove any players who encountered an error
+        for player in players_to_remove:
+            self.__players.remove(player)
+
+        if len(self.__players) <= 1:
+            self.__finish = False
+            # self.__finish_game()
+
 
     def convert_answer(self, answer: str):
         '''
@@ -186,9 +207,10 @@ class Game:
 
     def __handle_player_question_answer(self, player: Player, response: queue):
         # TODO: need the set socket timeout?
-        player.get_socket().settimeout(10)
+        # player.get_socket().settimeout(10)
         start = time.time()
         try:
+            player.get_socket().settimeout(10)
             ans = player.get_socket().recv(1024)
             ans = ans.decode()
             player_answer = self.convert_answer(ans)

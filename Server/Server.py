@@ -87,9 +87,9 @@ class Server:
 
         # Encode the server name string into bytes using UTF-8 encoding
         server_name_bytes = self.server_name.encode('utf-8')
-        print(f'udp_format: {self.udp_format}, magic_cookie: {self.magic_cookie}, message_type: {self.message_type}, server_name: {self.server_name},  tcp_port:  {self.tcp_port}')
+        # print(f'udp_format: {self.udp_format}, magic_cookie: {self.magic_cookie}, message_type: {self.message_type}, server_name: {self.server_name},  tcp_port:  {self.tcp_port}')
         message = struct.pack(self.udp_format, self.magic_cookie, self.message_type, server_name_bytes, self.tcp_port)
-        print(f'len message {len(message)}')
+        # print(f'len message {len(message)}')
         while self.is_broadcasting:
             self.udp_socket.sendto(message, (self.udp_ip, self.udp_port))
             # print(f'Broadcasting: message: {message}, udp- ip+port: {self.udp_ip}, {self.udp_port}')
@@ -107,7 +107,7 @@ class Server:
         self.udp_socket = None
         # for c in self.clients:
         #     c.stop()
-        self.clients.clear()  # Clear the players list
+        self.players.clear()  # Clear the players list
 
         # TODO: added killing clients threads, check if its ok and needed
         # for player in self.players:
@@ -160,6 +160,9 @@ class Server:
             for disconnected_player in disconnected_players:
                 self.players.remove(disconnected_player)
 
+            if len(self.players) <= 1:
+                self.stop()
+
     # TODO: this is the same function but with different approach for the implementation. Need to check and decide
     def __strategy(self):
         # TODO: 1. remove all the printings 2. check if lines before loop should stay there or not 3. manage
@@ -171,7 +174,7 @@ class Server:
         self.tcp_socket.settimeout(10)  # Set socket timeout to 10 seconds
         # TODO: remove time handling and prints later
         start_time = time.time()
-        players = []
+        self.players = []
         while True:
             try:
                 # Accept incoming TCP connections
@@ -179,14 +182,14 @@ class Server:
                 name = new_client[0].recv(self.buffer_size).decode()
                 print(f"Client accepted. Client's name: {name}")
                 player = Player(new_client[0], new_client[1], name)
-                players.append(player)
-               # print(f"Time from the beginning of count: {time.time()-start_time}")
+                self.players.append(player)
+                print(f"Time from the beginning of count: {time.time()-start_time}")
                 start_time = time.time()
             except socket.timeout:
-                if len(players) == 0:
+                if len(self.players) == 0:
                     # No players connected
                     break  # Back to step 1
-                elif len(players) == 1:
+                elif len(self.players) == 1:
                     # One player connected, cannot start the game
                     print("Only one player connected, waiting for more players...")
                     # self.players.clear()  # Clear the players list
@@ -195,47 +198,10 @@ class Server:
                     # Two or more players connected, start the game
                     self.__stop_broadcast()
                     print("Starting the game...")
-                    Game(players)
-                    # self.stop()
+                    Game(self.players)
+                    self.stop()
                     # TODO: Statistics
                     break  # Proceed to the next game
-
-    # TODO: this is the original implementation
-    # def __strategy(self):
-    #
-    #     while self.__is_alive:
-    #         # start sending udp broadcast messages
-    #         self.__start_broadcast()
-    #         # create thread to manage client connections
-    #         # TODO: need this call to manage_players (new thread)
-    #         # threading.Thread(target=self.__manage_clients).start()
-    #         # Wait for players to join or 10 seconds to elapse
-    #         while True:
-    #             try:
-    #                 # Accept incoming TCP connections
-    #                 new_client = self.tcp_socket.accept()  # (connection socket, address)
-    #                 print("client accepted")
-    #                 name = new_client[0].recv(self.buffer_size).decode()
-    #                 print(f"name: {name}")
-    #                 player = Player(new_client[0], new_client[1], name)
-    #                 self.players.append(player)
-    #                 print(f"Time number 1: {time.time()}")
-    #                 continue
-    #             except socket.timeout:
-    #                 if not self.__is_alive:
-    #                     break
-    #                 if len(self.players) >= 2:
-    #                     self.__stop_broadcast()
-    #                     print(f"Time number 2: {time.time()}")
-    #                     Game(self.players)
-    #                     # return
-    #                 # TODO: change else- what if only one client is connected but 10 sec passed without new client?
-    #                 # TODO: else need also to handle situation where there is no clients at all
-    #                 else:
-    #                     print("socket timed out with less than 2 players")
-    #
-    #     # TODO: check this- in case of server disconnect, we want to call stop method- here?
-    #     self.stop()
 
 
 if __name__ == '__main__':

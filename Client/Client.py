@@ -50,10 +50,9 @@ class Client:
                 try:
                     self.create_tcp_connection()
                 except:
-                    print("Connection failed...")
+                    # print("Connection failed...")
                     continue
                 self.__game()
-                print("Client finished game")
                 break
 
     # def connect_to_server(self):
