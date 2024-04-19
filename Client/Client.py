@@ -1,6 +1,12 @@
+import msvcrt
 import socket
 import struct
+import sys
 import threading
+import queue
+import time
+
+import select
 
 
 # Hello Tlaten, this is a test to see if GitHub works correctly.
@@ -30,25 +36,27 @@ class Client:
 
     def start(self):
         self.is_alive = True
-        # self.listening_for_offers()
-        # Open UDP listener
-        self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
-        self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        self.udp_socket.bind(("", self.udp_port))
-        # self.udp_socket.bind((self.local_ip, self.udp_port))
-        print(f'local_ip: {self.local_ip}, udp_port: {self.udp_port}')
-
         print("Client started, listening for offer requests...")
+        while True:
+            print("client started again")
+            # Open UDP listener
+            self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            # self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
+            self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.udp_socket.bind(("", self.udp_port))
+            # self.udp_socket.bind((self.local_ip, self.udp_port))
+            print(f'local_ip: {self.local_ip}, udp_port: {self.udp_port}')
+            while self.is_alive:
+                self.server_ip, self.tcp_port_server = self.__find_server()
+                try:
+                    self.create_tcp_connection()
+                except:
+                    print("Connection failed...")
+                    continue
+                self.__game()
+                print("Client finished game")
+                break
 
-        while self.is_alive:
-            self.server_ip, self.tcp_port_server = self.__find_server()
-            try:
-                self.create_tcp_connection()
-            except:
-                print("Connection failed...")
-                continue
-            self.__game()
     # def connect_to_server(self):
 
     def listening_for_offers(self):
@@ -56,12 +64,9 @@ class Client:
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        # self.udp_socket.bind(("", self.udp_port))
-        self.udp_socket.bind((self.local_ip, self.udp_port))
+        self.udp_socket.bind(("", self.udp_port))
+        # self.udp_socket.bind((self.local_ip, self.udp_port))
         print(f'local_ip: {self.local_ip}, udp_port: {self.udp_port}')
-
-    def stop(self):
-        self.is_alive = False
 
     def __find_server(self):
         while self.is_alive:
@@ -97,8 +102,6 @@ class Client:
         self.__send_message(self.client_name + "\n")
 
     def __game(self):
-        # TODO: remove printing
-        print(f'client entered the game: {self.client_name}')
         self.is_playing = True
         receiver = threading.Thread(target=self.__receive_message)
         receiver.start()
@@ -107,6 +110,7 @@ class Client:
         # sender = threading.Thread(target=self.__handle_user_inputs)
         # sender.start()
         receiver.join()
+        print("After receiver join")
         # sender.join()
 
     def __receive_message(self):
@@ -118,24 +122,104 @@ class Client:
                 if message:
                     print(message.decode())
                 else:
-                    print("Server disconnected, listening for offer requests...")
+                    print("Server disconnected, listening for offer requests...1")
                     self.is_playing = False
             except socket.timeout:
                 continue
             except:
-                print("Server disconnected, listening for offer requests...")
+                print("Server disconnected, listening for offer requests...2")
                 self.is_playing = False
-                return
+                # return
+        print(f'Finished recieving messages, self.is_playing is {self.is_playing}')
+
+    import msvcrt
+    import time
 
     def __handle_user_inputs(self):
-        # TODO: do we need a while here?
         while self.is_alive and self.is_playing:
+         #   print(f"inside __handle_user_inputs, is_alive is {self.is_alive} and is playing is {self.is_playing}")
             try:
-                message = input()
-                self.__send_message(str(message))
+                message = ""
+                print("Please type a message: (press Enter to send)")
+                while True:
+                    if msvcrt.kbhit():  # Check if key was pressed
+                        char = msvcrt.getch()  # Get the key press
+                        print(f"key that pressed: {char}")
+                        if char == b'\r':  # Carriage return means Enter was pressed
+                            print("inside if statement")
+                            break
+                        message += char.decode()  # Add character to message
+                        sys.stdout.write(char.decode())  # Echo character back to console
+                        sys.stdout.flush()
+                    time.sleep(0.1)  # Sleep briefly to reduce CPU load
+
+                if message:  # If a message was collected, send it
+                    self.__send_message(str(message))
+                    print(f"\nMessage sent: {message}")
             except Exception as e:
-                # TODO: decide how to handle
+                # Handle exceptions, possibly specific ones
+                print(f"Exception in __handle_user_inputs: {e}")
                 continue
+            print("Checking game status...")
+
+        print(f'Finished handling inputs, self.is_playing is {self.is_playing}')
+
+    # def __handle_user_inputs(self):
+    #     # TODO: do we need a while here?
+    #     print(
+    #         f"at the start of __handle_user_inputs when is_alive is {self.is_alive} and is playing is {self.is_playing}")
+    #     while self.is_alive and self.is_playing:
+    #         try:
+    #             print(f"inside __handle_user_inputs, is_alive is {self.is_alive} and is playing is {self.is_playing}")
+    #             message = input()
+    #             self.__send_message(str(message))
+    #
+    #             print(f"inside __handle_user_inputs, sent message, is_alive is {self.is_alive} and is playing is {self.is_playing}")
+    #
+    #         except Exception as e:
+    #             # TODO: decide how to handle
+    #             print("exception in __handle_user_inputs")
+    #             continue
+    #     print(f'Finished handling inputs, self.is_playing is {self.is_playing}')
+
+    # def __input_listener(self, input_queue):
+    #     while True:
+    #         try:
+    #             # Note: This will still block, we need to manage the thread termination
+    #             # outside, such as by sending a termination signal or similar.
+    #             message = input()
+    #             input_queue.put(message)
+    #         except EOFError:
+    #             break  # Handle end of input, such as Ctrl-D
+    #
+    # def __handle_user_inputs(self):
+    #     print(f"at the start of __handle_user_inputs when is_alive is {self.is_alive} and is playing is {self.is_playing}")
+    #
+    #     input_queue = queue.Queue()
+    #     listener_thread = threading.Thread(target=self.__input_listener, args=(input_queue,))
+    #     listener_thread.start()
+    #
+    #     while self.is_alive and self.is_playing:
+    #         try:
+    #             #print(f"inside __handle_user_inputs, is_alive is {self.is_alive} and is playing is {self.is_playing}")
+    #
+    #             message = input_queue.get(timeout=0.5)
+    #             self.__send_message(message)
+    #
+    #             #print(f"inside __handle_user_inputs, sent message, is_alive is {self.is_alive} and is playing is {self.is_playing}")
+    #
+    #
+    #         except queue.Empty:
+    #             # No input received, loop back and check conditions
+    #             if not self.is_playing:
+    #                 break
+    #
+    #     print(f'Finished handling inputs, self.is_playing is {self.is_playing}')
+    #     listener_thread.  # Clean up the thread
+    #     # listener_thread.join()  # Clean up the thread
+    #     print("bye bye amigos")
+    #
+    # Note: Ensure to safely terminate the listener_thread when exiting.
 
     def __send_message(self, message):
         try:
@@ -143,8 +227,13 @@ class Client:
         except:
             # print("Server disconnected, listening for offer requests...")
             self.is_playing = False
-            # TODO: check if its the right place
-            self.start()
+
+    def stop(self):
+        self.is_playing = False
+        self.udp_socket.close()
+        self.tcp_socket.close()
+        self.udp_socket = None
+        self.tcp_socket = None
 
 # def main():
 #     c = Client("Giler & Tlaten")
