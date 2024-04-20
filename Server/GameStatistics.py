@@ -1,36 +1,44 @@
 import json
 from pathlib import Path
+from typing import Dict, Any
+from Constants import players_statistics_file_path  # Import the file path constant
 
 
 # Utility functions
-def load_or_initialize_stats(file_path: str):
-    """Load existing statistics from a file or initialize a new one if it doesn't exist."""
-    stats_path = Path(file_path)
+def load_or_initialize_stats() -> Dict[str, Any]:
+    """Load existing statistics from a JSONL file or initialize a new one if it doesn't exist."""
+    stats_path = Path(players_statistics_file_path)
+    stats = {}
     if stats_path.exists():
         with open(stats_path, 'r') as file:
-            stats = {json.loads(line)['name']: json.loads(line) for line in file if line.strip()}
-    else:
-        stats = {}
+            for line in file:
+                data = json.loads(line.strip())
+                stats[data['name']] = data
     return stats
 
 
-def write_individual_stat_to_file(stat: dict, file_path: str):
-    """Write or update an individual player's statistics to the file."""
-    stats = load_or_initialize_stats(file_path)
-    stats[stat['name']] = stat  # Update or add the individual player's stats
-    with open(file_path, 'w') as file:  # Overwrite the file with updated stats
+def write_individual_stat_to_file(stats: Dict[str, Any]):
+    """Write all player statistics to the JSONL file, overwriting existing contents."""
+    with open(players_statistics_file_path, 'w') as file:
         for player_stat in stats.values():
             file.write(json.dumps(player_stat) + '\n')
 
 
-# Update function for game statistics
-def update_stats_per_game(file_path: str, player_name: str, games_played: int, games_won: bool, total_response_time,
-                          response_count):
-    """Update statistics for a player after a game and write to file."""
-    stat = {
+def update_stats_per_game(player_name: str, won_game: bool):
+    """Update statistics for a player after a game and write to the JSONL file."""
+    stats = load_or_initialize_stats()
+    player_stat = stats.get(player_name, {
         "name": player_name,
-        "games_played": games_played,
-        "games_won": games_won,
-        # "average_response_time": total_response_time / response_count if response_count > 0 else 0
-    }
-    write_individual_stat_to_file(stat, file_path)
+        "games_played": 0,
+        "games_won": 0,
+        "precision_of_winning": 0
+    })
+
+    # Update the statistics
+    player_stat["games_played"] += 1
+    if won_game:
+        player_stat["games_won"] += 1
+    player_stat["precision_of_winning"] = player_stat["games_won"] / player_stat["games_played"]
+
+    stats[player_name] = player_stat
+    write_individual_stat_to_file(stats)

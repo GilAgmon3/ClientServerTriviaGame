@@ -44,4 +44,5 @@ FF         RR  RR     III   EE       NN NN NN  DD   DD       SS
 FF         RR   RR   IIIII  EEEEEEE  NN  NNNN  DDDDDD    SSSSS 
 """
 
+players_statistics_file_path = 'player_stats.jsonl'
 

@@ -11,9 +11,6 @@ from GameView import print_colored
 from Constants import clients_names, udp_format
 import random
 
-
-# Hello Tlaten, this is a test to see if GitHub works correctly.
-
 class Client:
 
     def __init__(self, client_name: str):
@@ -39,9 +36,7 @@ class Client:
         self.message_type = 0x2
 
     def start(self):
-        # print("\033[32mThis is green text\033[0m")
         self.is_alive = True
-        #print("\033[32mClient started, listening for offer requests...\033[0m")
         print_colored(text="Client started, listening for offer requests...", color='cyan')
 
         while True:
@@ -62,23 +57,18 @@ class Client:
                 self.__game()
                 break
 
-    # def connect_to_server(self):
-
     def listening_for_offers(self):
         # Open UDP listener
         self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         # self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)
         self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.udp_socket.bind(("", self.udp_port))
-        # self.udp_socket.bind((self.local_ip, self.udp_port))
-        # print(f'local_ip: {self.local_ip}, udp_port: {self.udp_port}')
 
     def __find_server(self):
         while self.is_alive:
             try:
 
                 data, address = self.udp_socket.recvfrom(self.buffer_size)
-                print(len(data))
                 if len(data) != 39:
                     continue
                 magic_cookie, message_type, server_name, server_port = struct.unpack(self.udp_format, data)
@@ -99,7 +89,6 @@ class Client:
         """
         Connecting to server by TCP
         """
-        # TODO: do we need this?
         if not self.is_alive:
             raise Exception
 
@@ -113,11 +102,7 @@ class Client:
         receiver = threading.Thread(target=self.__receive_message)
         receiver.start()
         self.__handle_user_inputs()
-        # TODO: need to change the call to handle_user_input to new thread instead of main thread ?
-        # sender = threading.Thread(target=self.__handle_user_inputs)
-        # sender.start()
         receiver.join()
-        # sender.join()
 
     def __receive_message(self):
         while self.is_alive and self.is_playing:
@@ -126,10 +111,8 @@ class Client:
                 self.tcp_socket.settimeout(1)
                 message = self.tcp_socket.recv(self.buffer_size)
                 if message:
-                    #print(message.decode())
                     print_colored(text=message.decode(), color='cyan')
                 else:
-                    #print("Server disconnected, listening for offer requests...")
                     print_colored(
                         text="Server disconnected, listening for offer requests...",
                         color='cyan')
@@ -138,12 +121,10 @@ class Client:
             except socket.timeout:
                 continue
             except:
-                # print("Server disconnected, listening for offer requests...")
                 print_colored(
                     text="Server disconnected, listening for offer requests...",
                     color='cyan')
                 self.is_playing = False
-                # return
 
     def __handle_user_inputs(self):
         while self.is_alive and self.is_playing:
@@ -153,7 +134,8 @@ class Client:
 
                 input_thread.join(timeout=10)  # Wait for 1 second for the input thread to finish
                 if input_thread.is_alive():
-                    raise TimeoutError("Input timeout reached")
+                    continue
+                    # raise TimeoutError("Input timeout reached")
             except TimeoutError as te:
                 continue
             except Exception as e:
@@ -170,7 +152,6 @@ class Client:
         try:
             self.tcp_socket.send(message.encode())
         except:
-            # print("Server disconnected, listening for offer requests...")
             self.is_playing = False
 
     def stop(self):

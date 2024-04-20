@@ -4,11 +4,11 @@ import threading
 import time
 import socket
 from time import sleep
-
+import copy
 from Client.Player import Player
 from GameView import print_colored
 from Constants import FRIENDS_ASCII
-
+from GameStatistics import update_stats_per_game
 
 class Game:
     trivia_questions = {
@@ -37,7 +37,9 @@ class Game:
     def __init__(self, players: list[Player], server_name: str):
         # Get the players of the game
         self.__players = players
-
+        self.__players_indices = {}
+        for i in range(len(players)):
+            self.__players_indices[i] = players[i].get_name()
         # Create questions stack
         self.questions_stack = list(Game.trivia_questions.keys())
 
@@ -89,8 +91,10 @@ class Game:
         return question_message
 
     def get_winner_message(self, winner_index: int) -> str:
-        player = self.__players[winner_index]
-        winner_message = f"{player.get_name()} is correct! {player.get_name()} wins!"
+        # player = self.__players[winner_index]
+        # winner_message = f"{player.get_name()} is correct! {player.get_name()} wins!"
+        player_name = self.__players_indices[winner_index]
+        winner_message = f"{player_name} is correct! {player_name} wins!"
         return winner_message
 
     def get_summary_message(self, winner_index: int) -> str:
@@ -104,7 +108,6 @@ class Game:
         Handle messages that is relevant for both server and clients-prints the message in all the consoles
         """
         self.__send_message_to_players(message)
-        #print(message)
         print_colored(text=message, color='cyan')
 
     def starting_game_messages(self):
@@ -132,12 +135,6 @@ class Game:
         # starting all players threads
         for thread in threads_arr:
             thread.start()
-        # TODO: hande 10 sec timer for all players
-        # TODO: remove join?
-        # joining response threads for all players
-
-        # for thread in threads_arr:
-        #     thread.join()
 
         return players_response
 
@@ -157,9 +154,7 @@ class Game:
                 response_tuple = response_queue.get()
                 # unpack the tuple
                 curr_answer, curr_time = response_tuple
-                # TODO: remove printing
-                print(f'index: {index}, answer: {curr_answer}, time: {curr_time}')
-                # print_colored(text=f'index: {index}, answer: {curr_answer}, time: {curr_time}', color='cyan')
+                print_colored(text=f'index: {index}, answer: {curr_answer}, time: {curr_time}', color='cyan')
 
                 # check if the answer is correct and time is shorter than the current shortest time
                 if curr_answer == self.current_question_answer and curr_time < shortest_time:
@@ -170,8 +165,15 @@ class Game:
                 continue
         return correct_answer_index
 
+    def update_players_statistics(self, winner_index):
+        winner_name = self.__players_indices.get(winner_index)
+        winner = False
+        for player in self.__players:
+            if player.get_name() == winner_name:
+                winner = True
+            update_stats_per_game(player_name=player.get_name(), won_game=winner)
+
     def __game(self):
-        # TODO: handle disqualified
         self.starting_game_messages()
         players_response = self.handling_players_answer_threads()
         correct_answer_index = self.find_winner(players_response)
@@ -180,13 +182,14 @@ class Game:
         while correct_answer_index is None:
             print(f'self finish {self.__finish}')
             if self.__finish:
+
                 self.__finish_game()
                 return
             self.new_question_message()
             players_response = self.handling_players_answer_threads()
             correct_answer_index = self.find_winner(players_response)
-            print(f'correct answer index: {correct_answer_index}')
-
+        if correct_answer_index is not None:
+            self.update_players_statistics(correct_answer_index)
         # send to clients and print at server the message of the win
         self.handle_message(self.get_winner_message(correct_answer_index))
 
@@ -203,19 +206,10 @@ class Game:
                 player.get_socket().send(message.encode())
             except Exception as e:
                 # If an error occurs, log the error and mark the player for removal
-                print(f"Exception in __send_message_to_players: {e}")
-                # players_to_remove.append(player)
                 self.__players.remove(player)
                 if len(self.__players) <= 1:
                     self.__finish = True
 
-        # Remove any players who encountered an error
-        # for player in players_to_remove:
-        #     self.__players.remove(player)
-
-        # if len(self.__players) <= 1:
-        #     self.__finish = True
-        # self.__finish_game()
 
     def convert_answer(self, answer: str):
         '''
@@ -231,18 +225,15 @@ class Game:
             return None
 
     def __handle_player_question_answer(self, player: Player, response: queue):
-        # TODO: need the set socket timeout?
-        # player.get_socket().settimeout(10)
+
         start = time.time()
         try:
             player.get_socket().settimeout(10)
             ans = player.get_socket().recv(1024)
             ans = ans.decode()
             player_answer = self.convert_answer(ans)
-            # TODO: remove printing
-            print_colored(text=f'Player {player.get_name()} answered {player_answer}', color='magenta')
+            print_colored(text=f'Player {player.get_name()} answered {player_answer}', color='cyan')
         except Exception:
-            # TODO: timeout exception?
             player_answer = None
         end = time.time()
         # tuple of the answer according to player and response time
@@ -255,5 +246,4 @@ class Game:
         self.__finish = True
         for player in self.__players:
             player.kill()
-        #print("Game over, sending out offer requests...")
-        print_colored(text="Game over, sending out offer requests...", color='magenta')
+        print_colored(text="Game over, sending out offer requests...", color='cyan')

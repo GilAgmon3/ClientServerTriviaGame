@@ -44,19 +44,6 @@ class Server:
             except OSError as e:
                 port += 1
 
-    # NOAM AND LINOY
-    # def get_local_ip(self):
-    #     while True:
-    #         try:
-    #             time.sleep(0.2)
-    #             temp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    #             temp_socket.connect(("8.8.8.8", 80))
-    #             ip_address = temp_socket.getsockname()[0]
-    #             temp_socket.close()
-    #             return ip_address
-    #         except OSError as e:
-    #             print(f"Error in get_local_ip: {e}")
-    #             continue
 
     def __get_local_ip(self):
         while True:
@@ -164,8 +151,6 @@ class Server:
 
 
     def __strategy(self):
-        # TODO: 1. remove all the printings
-        # self.__start_broadcast()
         # Start sending UDP broadcast messages
         self.__start_broadcast()
         # Wait for players to join or 10 seconds to elapse
@@ -188,18 +173,13 @@ class Server:
             except socket.timeout:
                 if len(self.players) == 0:
                     continue
-                    # No players connected
-                    # break  # Back to step 1
                 elif len(self.players) == 1:
                     # One player connected, cannot start the game
                     print("Only one player connected, waiting for more players...")
                     continue
-                    # self.players.clear()  # Clear the players list
-                    # break  # Back to step 1
                 else:
                     # Two or more players connected, start the game
                     self.__stop_broadcast()
-                    #print("Starting the game...")
                     print_colored(text="Starting the game...", color='magenta')
                     self.game = True
                     manage_thread.join()
