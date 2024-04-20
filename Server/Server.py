@@ -3,6 +3,7 @@ import socket
 import struct
 import threading
 import time
+import random
 
 from Game import Game
 from Client.Player import Player

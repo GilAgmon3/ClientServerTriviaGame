@@ -32,7 +32,7 @@ class Game:
         "Chandler's father is a famous novelist.": False
     }
 
-    def __init__(self, players: list[Player]):
+    def __init__(self, players: list[Player], server_name: str):
         # Get the players of the game
         self.__players = players
 
@@ -69,7 +69,12 @@ class Game:
         return False
 
     def get_welcome_message(self) -> str:
-        welcome_message = f"Welcome to the {self.server_name} server, where we are answering trivia questions about 'Friends' TV show!\n"
+
+        welcome_message = FRIENDS_ASCII
+        welcome_message += "\n"
+
+        welcome_message += (f"Welcome to '{self.server_name}' server, where we are answering trivia questions about "
+                            f"'Friends' TV show!\n")
 
         players_info = ""
         for i, player in enumerate(self.__players):
@@ -231,7 +236,7 @@ class Game:
             ans = ans.decode()
             player_answer = self.convert_answer(ans)
             # TODO: remove printing
-            print(f'Player {player.get_name()} answered {player_answer}')
+            print_colored(text=f'Player {player.get_name()} answered {player_answer}', color='magenta')
         except Exception:
             # TODO: timeout exception?
             player_answer = None
