@@ -165,7 +165,6 @@ class Game:
 
         # In case there is no winner-continue the game
         while correct_answer_index is None:
-            sleep(2)
             print(f'self finish {self.__finish}')
             if self.__finish:
                 self.__finish_game()

@@ -129,38 +129,6 @@ class Client:
                 self.is_playing = False
                 # return
 
-    import msvcrt
-    import time
-
-    # def __handle_user_inputs(self):
-    #     while self.is_alive and self.is_playing:
-    #      #   print(f"inside __handle_user_inputs, is_alive is {self.is_alive} and is playing is {self.is_playing}")
-    #         try:
-    #             message = ""
-    #             print("Please type a message: (press Enter to send)")
-    #             while True:
-    #                 if msvcrt.kbhit():  # Check if key was pressed
-    #                     char = msvcrt.getch()  # Get the key press
-    #                     print(f"key that pressed: {char}")
-    #                     if char == b'\r':  # Carriage return means Enter was pressed
-    #                         print("inside if statement")
-    #                         break
-    #                     message += char.decode()  # Add character to message
-    #                     sys.stdout.write(char.decode())  # Echo character back to console
-    #                     sys.stdout.flush()
-    #                 time.sleep(0.1)  # Sleep briefly to reduce CPU load
-    #
-    #             if message:  # If a message was collected, send it
-    #                 self.__send_message(str(message))
-    #                 print(f"\nMessage sent: {message}")
-    #         except Exception as e:
-    #             # Handle exceptions, possibly specific ones
-    #             print(f"Exception in __handle_user_inputs: {e}")
-    #             continue
-    #         print("Checking game status...")
-    #
-    #     print(f'Finished handling inputs, self.is_playing is {self.is_playing}')
-
     def __handle_user_inputs(self):
         while self.is_alive and self.is_playing:
             try:
