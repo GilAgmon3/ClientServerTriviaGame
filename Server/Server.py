@@ -187,13 +187,15 @@ class Server:
                 start_time = time.time()
             except socket.timeout:
                 if len(self.players) == 0:
+                    continue
                     # No players connected
-                    break  # Back to step 1
+                    # break  # Back to step 1
                 elif len(self.players) == 1:
                     # One player connected, cannot start the game
                     print("Only one player connected, waiting for more players...")
+                    continue
                     # self.players.clear()  # Clear the players list
-                    break  # Back to step 1
+                    # break  # Back to step 1
                 else:
                     # Two or more players connected, start the game
                     self.__stop_broadcast()

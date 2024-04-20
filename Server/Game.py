@@ -3,6 +3,8 @@ import random
 import threading
 import time
 import socket
+from time import sleep
+
 from Player import Player
 
 
@@ -123,8 +125,8 @@ class Game:
         # TODO: remove join?
         # joining response threads for all players
 
-        for thread in threads_arr:
-            thread.join()
+        # for thread in threads_arr:
+        #     thread.join()
 
         return players_response
 
@@ -140,29 +142,32 @@ class Game:
         # iterate over each player's response queue
         for index, response_queue in enumerate(players_response):
             # get the response tuple from the queue
-            response_tuple = response_queue.get()
-            # unpack the tuple
-            curr_answer, curr_time = response_tuple
-            # TODO: remove printing
-            print(f'index: {index}, answer: {curr_answer}, time: {curr_time}')
-            # check if the answer is correct and time is shorter than the current shortest time
-            if curr_answer == self.current_question_answer and curr_time < shortest_time:
-                shortest_time = curr_time
-                correct_answer_index = index
+            try:
+                response_tuple = response_queue.get()
+                # unpack the tuple
+                curr_answer, curr_time = response_tuple
+                # TODO: remove printing
+                print(f'index: {index}, answer: {curr_answer}, time: {curr_time}')
+                # check if the answer is correct and time is shorter than the current shortest time
+                if curr_answer == self.current_question_answer and curr_time < shortest_time:
+                    shortest_time = curr_time
+                    correct_answer_index = index
+            except:
+                # if player didnt response
+                continue
         return correct_answer_index
 
     def __game(self):
         # TODO: handle disqualified
-
-        # TODO: check with Gil
         self.starting_game_messages()
         players_response = self.handling_players_answer_threads()
         correct_answer_index = self.find_winner(players_response)
 
         # In case there is no winner-continue the game
         while correct_answer_index is None:
+            sleep(2)
             print(f'self finish {self.__finish}')
-            if not self.__finish:
+            if self.__finish:
                 self.__finish_game()
                 return
             self.new_question_message()
@@ -177,7 +182,7 @@ class Game:
         self.__finish_game()
 
     def __send_message_to_players(self, message: str):
-        players_to_remove = []
+        # players_to_remove = []
 
         # Iterate over all players
         for player in self.__players:
@@ -189,11 +194,11 @@ class Game:
                 players_to_remove.append(player)
 
         # Remove any players who encountered an error
-        for player in players_to_remove:
-            self.__players.remove(player)
+        # for player in players_to_remove:
+        #     self.__players.remove(player)
 
-        if len(self.__players) <= 1:
-            self.__finish = False
+        # if len(self.__players) <= 1:
+        #     self.__finish = True
             # self.__finish_game()
 
 
