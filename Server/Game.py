@@ -5,7 +5,7 @@ import time
 import socket
 from time import sleep
 
-from Player import Player
+from Client.Player import Player
 
 
 class Game:
@@ -206,8 +206,7 @@ class Game:
 
         # if len(self.__players) <= 1:
         #     self.__finish = True
-            # self.__finish_game()
-
+        # self.__finish_game()
 
     def convert_answer(self, answer: str):
         '''
@@ -215,7 +214,12 @@ class Game:
         :return: True if the player answer any of True valid version, False else
         '''
 
-        return answer in ('T', 'Y', '1')
+        if answer in ('T', 'Y', '1'):
+            return True
+        if answer in ('F', 'N', '0'):
+            return False
+        else:
+            return None
 
     def __handle_player_question_answer(self, player: Player, response: queue):
         # TODO: need the set socket timeout?
@@ -237,7 +241,6 @@ class Game:
         # TODO remove
         print(answer_time_tuple)
         response.put(answer_time_tuple)
-        # return
 
     def __finish_game(self):
         self.__finish = True

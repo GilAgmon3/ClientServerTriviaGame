@@ -66,8 +66,6 @@ class Server:
                 print(f"Error obtaining local IP: {error}")
                 # Continue trying until a successful IP retrieval
 
-
-
     def start(self):
         print("Server started, listening on IP address " + self.local_ip)
 
@@ -90,11 +88,9 @@ class Server:
 
             #self.tcp_socket.settimeout(10)  # TODO: need it? GPT DIDNT USE IT
 
-
             # start strategy
 
             self.__strategy()
-
 
     # def start(self):
     #     # open udp connection
@@ -207,83 +203,47 @@ class Server:
                 print(f"Failed to send message to {player.get_name()}: {e}")
                 self.players.remove(player)
 
-
     # TODO: this is the same function but with different approach for the implementation. Need to check and decide
-    # def __strategy(self):
-    #     # TODO: 1. remove all the printings 2. check if lines before loop should stay there or not 3. manage
-    #     # TODO: instead of inside
-    #     # self.__start_broadcast()
-    #     # Start sending UDP broadcast messages
-    #     self.__start_broadcast()
-    #     # Wait for players to join or 10 seconds to elapse
-    #     self.tcp_socket.settimeout(10)  # Set socket timeout to 10 seconds
-    #     # TODO: remove time handling and prints later
-    #     start_time = time.time()
-    #     self.players = []
-    #     while True:
-    #         try:
-    #             # Accept incoming TCP connections
-    #             new_client, addr = self.tcp_socket.accept()  # (connection socket, address)
-    #             name = new_client.recv(self.buffer_size).decode()
-    #             print(f"Client accepted. Client's name: {name}")
-    #             player = Player(new_client, addr, name)
-    #             self.players.append(player)
-    #             print(f"Time from the beginning of count: {time.time()-start_time}")
-    #             start_time = time.time()
-    #         except socket.timeout:
-    #             if len(self.players) == 0:
-    #                 continue
-    #                 # No players connected
-    #                 # break  # Back to step 1
-    #             elif len(self.players) == 1:
-    #                 # One player connected, cannot start the game
-    #                 print("Only one player connected, waiting for more players...")
-    #                 continue
-    #                 # self.players.clear()  # Clear the players list
-    #                 # break  # Back to step 1
-    #             else:
-    #                 # Two or more players connected, start the game
-    #                 self.__stop_broadcast()
-    #                 print("Starting the game...")
-    #                 Game(self.players)
-    #                 self.stop()
-    #                 # TODO: Statistics
-    #                 break  # Proceed to the next game
-
     def __strategy(self):
+        # TODO: 1. remove all the printings 2. check if lines before loop should stay there or not 3. manage
+        # TODO: instead of inside
+        # self.__start_broadcast()
+        # Start sending UDP broadcast messages
         self.__start_broadcast()
+        # Wait for players to join or 10 seconds to elapse
         self.tcp_socket.settimeout(10)  # Set socket timeout to 10 seconds
-        countdown = 10
+        # TODO: remove time handling and prints later
         start_time = time.time()
-
-        while countdown > 0:
+        self.players = []
+        while True:
             try:
-                new_client, addr = self.tcp_socket.accept()
+                # Accept incoming TCP connections
+                new_client, addr = self.tcp_socket.accept()  # (connection socket, address)
                 name = new_client.recv(self.buffer_size).decode()
+                print(f"Client accepted. Client's name: {name}")
                 player = Player(new_client, addr, name)
                 self.players.append(player)
-                print(f"Connected: {name}")
+                print(f"Time from the beginning of count: {time.time() - start_time}")
+                start_time = time.time()
             except socket.timeout:
-                # Decrement the countdown each second if no new player connects
-                elapsed = time.time() - start_time
-                if elapsed >= 1:
-                    countdown -= 1
-                    start_time = time.time()
-                    self.broadcast_to_players(f"Game starts in {countdown} seconds...")
-                continue
-
-            if len(self.players) >= 2:
-                # Reset the countdown when a new player connects
-                countdown = 10
-                self.broadcast_to_players(f"Game starts in {countdown} seconds...")
-
-        if len(self.players) >= 2:
-            self.__stop_broadcast()
-            print("Starting the game...")
-            Game(self.players)
-        else:
-            print("Not enough players to start the game.")
-        self.stop()
+                if len(self.players) == 0:
+                    continue
+                    # No players connected
+                    # break  # Back to step 1
+                elif len(self.players) == 1:
+                    # One player connected, cannot start the game
+                    print("Only one player connected, waiting for more players...")
+                    continue
+                    # self.players.clear()  # Clear the players list
+                    # break  # Back to step 1
+                else:
+                    # Two or more players connected, start the game
+                    self.__stop_broadcast()
+                    print("Starting the game...")
+                    Game(self.players)
+                    self.stop()
+                    # TODO: Statistics
+                    break  # Proceed to the next game
 
 
 if __name__ == '__main__':
