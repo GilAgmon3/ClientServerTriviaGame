@@ -7,12 +7,15 @@ import queue
 import time
 
 import select
-
+from GameView import print_colored
+from Constants import clients_names, udp_format
+import random
 
 
 # Hello Tlaten, this is a test to see if GitHub works correctly.
 
 class Client:
+
     def __init__(self, client_name: str):
         self.client_name = client_name
 
@@ -21,7 +24,7 @@ class Client:
         # B: Represents a single byte for the message type.
         # 32s: Represents a 32-byte string for the server name.
         # H: Represents a 2-byte unsigned short integer for the server port.
-        self.udp_format = ">IB32sH"
+        self.udp_format = udp_format
 
         self.local_ip = socket.gethostbyname(socket.gethostname())
         self.is_alive = False
@@ -36,8 +39,11 @@ class Client:
         self.message_type = 0x2
 
     def start(self):
+        # print("\033[32mThis is green text\033[0m")
         self.is_alive = True
-        print("Client started, listening for offer requests...")
+        #print("\033[32mClient started, listening for offer requests...\033[0m")
+        print_colored(text="Client started, listening for offer requests...", color='cyan')
+
         while True:
             # Open UDP listener
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -51,7 +57,7 @@ class Client:
                 try:
                     self.create_tcp_connection()
                 except:
-                    # print("Connection failed...")
+                    print("Connection failed...")
                     continue
                 self.__game()
                 break
@@ -84,7 +90,9 @@ class Client:
                 continue
 
             if magic_cookie == self.magic_cookie and message_type == self.message_type:
-                print(f"Received offer from server {server_name} at address {address[0]}, attempting to connect...")
+                print_colored(
+                    text=f"Received offer from server {server_name} at address {address[0]}, attempting to connect...",
+                    color='cyan')
                 return address[0], int(server_port)
 
     def create_tcp_connection(self):
@@ -121,12 +129,19 @@ class Client:
                     #print(message.decode())
                     print_colored(text=message.decode(), color='cyan')
                 else:
-                    print("Server disconnected, listening for offer requests...")
+                    #print("Server disconnected, listening for offer requests...")
+                    print_colored(
+                        text="Server disconnected, listening for offer requests...",
+                        color='cyan')
+
                     self.is_playing = False
             except socket.timeout:
                 continue
             except:
-                print("Server disconnected, listening for offer requests...")
+                # print("Server disconnected, listening for offer requests...")
+                print_colored(
+                    text="Server disconnected, listening for offer requests...",
+                    color='cyan')
                 self.is_playing = False
                 # return
 

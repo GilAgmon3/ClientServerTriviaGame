@@ -6,6 +6,8 @@ import socket
 from time import sleep
 
 from Client.Player import Player
+from GameView import print_colored
+from Constants import FRIENDS_ASCII
 
 
 class Game:
@@ -47,8 +49,7 @@ class Game:
         self.current_question = None
         self.current_question_answer = None
 
-        # TODO: change this
-        self.server_name = "Smelly Cat Squad"
+        self.server_name = server_name
 
         self.__game()
 
@@ -103,7 +104,8 @@ class Game:
         Handle messages that is relevant for both server and clients-prints the message in all the consoles
         """
         self.__send_message_to_players(message)
-        print(message)
+        #print(message)
+        print_colored(text=message, color='cyan')
 
     def starting_game_messages(self):
         # starting the game
@@ -157,6 +159,8 @@ class Game:
                 curr_answer, curr_time = response_tuple
                 # TODO: remove printing
                 print(f'index: {index}, answer: {curr_answer}, time: {curr_time}')
+                # print_colored(text=f'index: {index}, answer: {curr_answer}, time: {curr_time}', color='cyan')
+
                 # check if the answer is correct and time is shorter than the current shortest time
                 if curr_answer == self.current_question_answer and curr_time < shortest_time:
                     shortest_time = curr_time
@@ -251,4 +255,5 @@ class Game:
         self.__finish = True
         for player in self.__players:
             player.kill()
-        print("Game over, sending out offer requests...")
+        #print("Game over, sending out offer requests...")
+        print_colored(text="Game over, sending out offer requests...", color='magenta')

@@ -19,14 +19,14 @@ class Server:
         self.udp_socket = None
         self.udp_ip = "255.255.255.255"
         self.udp_port = 13117
-        self.udp_format = ">IB32sH"
+        self.udp_format = udp_format
         # self.tcp_socket, self.tcp_port = self.__find_available_port(1024)
         self.tcp_socket = None
         self.tcp_port = None
         self.buffer_size = 1024
         self.magic_cookie = 0xabcddcba
         self.message_type = 0x2
-        self.server_name = "Smelly Cat Squad"
+        self.server_name = random.choice(server_names)
         self.players = []
         self.game = False
 
@@ -68,11 +68,15 @@ class Server:
                     local_ip = sock.getsockname()[0]
                     return local_ip
             except OSError as error:
-                print(f"Error obtaining local IP: {error}")
+                #print(f"Error obtaining local IP: {error}")
+                print_colored(text=f"Error obtaining local IP: {error}", color='yellow')
                 # Continue trying until a successful IP retrieval
 
     def start(self):
-        print("Server started, listening on IP address " + self.local_ip)
+
+        # print("\033[31mThis is red text\033[0m")
+        #print("\033[31mServer started, listening on IP address " + self.local_ip + "\033[0m")
+        print_colored(text=f"Server started, listening on IP address {self.local_ip}", color='magenta')
 
         while True:
             print("started server again")
