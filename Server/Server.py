@@ -29,6 +29,7 @@ class Server:
         self.server_name = random.choice(server_names)
         self.players = []
         self.game = False
+        self.players_names = []
 
     def __find_available_port(self, start_port: int) -> int:
         """ Finds the first port available staring start_port and returns it"""
@@ -36,10 +37,8 @@ class Server:
         while True:
             try:
                 with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    # TODO: check if keep localhost or empty
                     # s.bind(("", port))
                     s.bind(('localhost', port))
-                    # TODO i changed to returning only port
                     return port
             except OSError as e:
                 port += 1
@@ -77,15 +76,12 @@ class Server:
             self.tcp_port = self.__find_available_port(1025)
             self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            self.tcp_socket.bind((self.local_ip, self.tcp_port))  # TODO: self.local_ip was ""
-            # self.tcp_socket.bind(("", self.tcp_port))  # TODO: "" was self.local_ip
-            self.tcp_socket.settimeout(10)  # TODO: need it?
+            self.tcp_socket.bind((self.local_ip, self.tcp_port))
+            # self.tcp_socket.bind(("", self.tcp_port))
+            self.tcp_socket.settimeout(10)
             self.tcp_socket.listen()
 
-            #self.tcp_socket.settimeout(10)  # TODO: need it? GPT DIDNT USE IT
-
             # start strategy
-
             self.__strategy()
 
     def __start_broadcast(self):
@@ -118,10 +114,6 @@ class Server:
         #     c.stop()
         self.players.clear()  # Clear the players list
 
-        # TODO: added killing clients threads, check if its ok and needed
-        # for player in self.players:
-        #     player.kill()
-
     def __manage_clients(self):
         while not self.game:
             disconnected_players = []
@@ -147,6 +139,7 @@ class Server:
                 # Remove disconnected players
                 for disconnected_player in disconnected_players:
                     self.players.remove(disconnected_player)
+                    self.player_names.remove(disconnected_player.get_name())
                     disconnected_player.kill()  # Ensure the socket is closed
 
 
@@ -155,7 +148,6 @@ class Server:
         self.__start_broadcast()
         # Wait for players to join or 10 seconds to elapse
         self.tcp_socket.settimeout(10)  # Set socket timeout to 10 seconds
-        # TODO: remove time handling and prints later
         start_time = time.time()
         self.players = []
         manage_thread = threading.Thread(target=self.__manage_clients)
@@ -165,17 +157,33 @@ class Server:
                 # Accept incoming TCP connections
                 new_client = self.tcp_socket.accept()  # (connection socket, address)
                 name = new_client[0].recv(self.buffer_size).decode()
-                print(f"Client accepted. Client's name: {name}")
+
+                suffix = 0  # Initialize a suffix to add to the name
+                while True:
+                    if suffix > 0:  # Only modify name after the first check
+                        modified_name = f"{name}{suffix}"  # Format the name with the current suffix
+                    else:
+                        modified_name = name  # Use the original name initially
+
+                    if modified_name not in self.players_names:
+                        name = modified_name  # Update name to the unique modified_name
+                        break  # Exit loop once a unique name is found
+
+                    suffix += 1  # Increment suffix for the next iteration if needed
+
+                self.players_names.append(name)  # Append the unique name to the list
+
+                print_colored(text=f"Client accepted. Client's name: {name}", color='magenta')
                 player = Player(new_client[0], new_client[1], name)
                 self.players.append(player)
-                print(f"Time from the beginning of count: {time.time() - start_time}")
+                print_colored(text=f"Time from the beginning of count: {time.time() - start_time}", color='magenta')
                 start_time = time.time()
             except socket.timeout:
                 if len(self.players) == 0:
                     continue
                 elif len(self.players) == 1:
                     # One player connected, cannot start the game
-                    print("Only one player connected, waiting for more players...")
+                    print_colored(text="Only one player connected, waiting for more players...", color='magenta')
                     continue
                 else:
                     # Two or more players connected, start the game
@@ -184,8 +192,8 @@ class Server:
                     self.game = True
                     manage_thread.join()
                     Game(self.players, self.server_name)
-                    # self.stop()
-                    # TODO: Statistics
+                    self.players_names.clear()
+                    self.stop()
                     break  # Proceed to the next game
 
 

@@ -180,7 +180,6 @@ class Game:
 
         # In case there is no winner-continue the game
         while correct_answer_index is None:
-            print(f'self finish {self.__finish}')
             if self.__finish:
 
                 self.__finish_game()
@@ -238,8 +237,6 @@ class Game:
         end = time.time()
         # tuple of the answer according to player and response time
         answer_time_tuple = (player_answer, end - start)
-        # TODO remove
-        print(answer_time_tuple)
         response.put(answer_time_tuple)
 
     def __finish_game(self):
