@@ -57,12 +57,16 @@ class Game:
         Generate the next random question from question stack.
         :return: True if there is question that wasn't asked already to generate, False else
         '''
+        if not self.questions_stack:
+            # Refill and reshuffle the questions stack when empty
+            self.questions_stack = list(self.trivia_questions.keys())
+            random.shuffle(self.questions_stack)
+
         if self.questions_stack:
             self.current_question = self.questions_stack.pop()
-            self.current_question_answer = Game.trivia_questions[self.current_question]
+            self.current_question_answer = self.trivia_questions[self.current_question]
             return True
-        else:
-            return False
+        return False
 
     def get_welcome_message(self) -> str:
         welcome_message = f"Welcome to the {self.server_name} server, where we are answering trivia questions about 'Friends' TV show!\n"
@@ -190,7 +194,11 @@ class Game:
                 player.get_socket().send(message.encode())
             except Exception as e:
                 # If an error occurs, log the error and mark the player for removal
-                players_to_remove.append(player)
+                print(f"Exception in __send_message_to_players: {e}")
+                # players_to_remove.append(player)
+                self.__players.remove(player)
+                if len(self.__players) <= 1:
+                    self.__finish = True
 
         # Remove any players who encountered an error
         # for player in players_to_remove:

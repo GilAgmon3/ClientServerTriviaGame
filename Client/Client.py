@@ -139,15 +139,20 @@ class Client:
                 if input_thread.is_alive():
                     raise TimeoutError("Input timeout reached")
             except TimeoutError as te:
+                #print(f"TimeoutError Exception in __handle_user_inputs: {te}")
                 continue
             except Exception as e:
+                print(f"Exception in __handle_user_inputs: {e}")
+
                 continue
 
     def __get_input(self):
         try:
             message = input()
             self.__send_message(str(message))
-        except EOFError:
+        except EOFError as e:
+            print(f"EOFError Exception in __get_input: {e}")
+
             pass  # Handle end-of-file error if necessary
 
 
