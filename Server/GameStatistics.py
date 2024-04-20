@@ -3,7 +3,7 @@ from pathlib import Path
 
 
 # Utility functions
-def load_or_initialize_stats(file_path):
+def load_or_initialize_stats(file_path: str):
     """Load existing statistics from a file or initialize a new one if it doesn't exist."""
     stats_path = Path(file_path)
     if stats_path.exists():
@@ -14,41 +14,23 @@ def load_or_initialize_stats(file_path):
     return stats
 
 
-def write_stats_to_file(stats, file_path):
-    """Write all player statistics to the file, overwriting existing contents."""
-    with open(file_path, 'w') as file:
-        for stat in stats.values():
-            file.write(json.dumps(stat) + '\n')
+def write_individual_stat_to_file(stat: dict, file_path: str):
+    """Write or update an individual player's statistics to the file."""
+    stats = load_or_initialize_stats(file_path)
+    stats[stat['name']] = stat  # Update or add the individual player's stats
+    with open(file_path, 'w') as file:  # Overwrite the file with updated stats
+        for player_stat in stats.values():
+            file.write(json.dumps(player_stat) + '\n')
 
 
-# Update functions
-def update_stats_per_round(stats, player_name, round_won):
-    """Update statistics for a player after a round."""
-    if player_name not in stats:
-        stats[player_name] = {
-            "name": player_name,
-            "games_played": 0,
-            "rounds_participated": 0,
-            "rounds_was_right": 0,
-            "games_won": 0,
-            "total_response_time": 0,
-            "response_count": 0,
-            "average_response_time": 0.0
-        }
-    stats[player_name]["rounds_participated"] += 1
-    if round_won:
-        stats[player_name]["rounds_won"] += 1
-
-
-def update_stats_per_game(stats, player_name, game_won, response_time):
-    """Update statistics for a player after a game."""
-    stats[player_name]["games_played"] += 1
-    if game_won:
-        stats[player_name]["games_won"] += 1
-    stats[player_name]["total_response_time"] += response_time
-    stats[player_name]["response_count"] += 1
-    stats[player_name]["average_response_time"] = (
-            stats[player_name]["total_response_time"] / stats[player_name]["response_count"]
-    )
-
-
+# Update function for game statistics
+def update_stats_per_game(file_path: str, player_name: str, games_played: int, games_won: bool, total_response_time,
+                          response_count):
+    """Update statistics for a player after a game and write to file."""
+    stat = {
+        "name": player_name,
+        "games_played": games_played,
+        "games_won": games_won,
+        # "average_response_time": total_response_time / response_count if response_count > 0 else 0
+    }
+    write_individual_stat_to_file(stat, file_path)

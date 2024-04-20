@@ -80,7 +80,6 @@ class Client:
                 server_name = server_name.decode('utf-8').rstrip('\x00')
 
             except struct.error as e:
-                print("inside error in __find_server: ", e)  # TODO: delete at end
                 continue
 
             if magic_cookie == self.magic_cookie and message_type == self.message_type:
@@ -118,7 +117,8 @@ class Client:
                 self.tcp_socket.settimeout(1)
                 message = self.tcp_socket.recv(self.buffer_size)
                 if message:
-                    print(message.decode())
+                    #print(message.decode())
+                    print_colored(text=message.decode(), color='cyan')
                 else:
                     print("Server disconnected, listening for offer requests...")
                     self.is_playing = False
@@ -139,10 +139,8 @@ class Client:
                 if input_thread.is_alive():
                     raise TimeoutError("Input timeout reached")
             except TimeoutError as te:
-                #print(f"TimeoutError Exception in __handle_user_inputs: {te}")
                 continue
             except Exception as e:
-                print(f"Exception in __handle_user_inputs: {e}")
                 continue
 
     def __get_input(self):
@@ -150,28 +148,7 @@ class Client:
             message = input()
             self.__send_message(str(message))
         except Exception as e:
-            print(f"Exception in __get_input: {e}")
-
-
-    # def __handle_user_inputs(self):
-    #     # TODO: do we need a while here?
-    #     print(
-    #         f"at the start of __handle_user_inputs when is_alive is {self.is_alive} and is playing is {self.is_playing}")
-    #     while self.is_alive and self.is_playing:
-    #         try:
-    #             print(f"inside __handle_user_inputs, is_alive is {self.is_alive} and is playing is {self.is_playing}")
-    #             message = input()
-    #             self.__send_message(str(message))
-    #
-    #             print(f"inside __handle_user_inputs, sent message, is_alive is {self.is_alive} and is playing is {self.is_playing}")
-    #
-    #         except Exception as e:
-    #             # TODO: decide how to handle
-    #             print("exception in __handle_user_inputs")
-    #             continue
-    #     print(f'Finished handling inputs, self.is_playing is {self.is_playing}')
-
-
+            pass
 
     def __send_message(self, message):
         try:
@@ -187,8 +164,11 @@ class Client:
         self.udp_socket = None
         self.tcp_socket = None
 
-# def main():
-#     c = Client("Giler & Tlaten")
-#     c.start()
-#
-# main()
+
+def main():
+    c = Client(random.choice(clients_names))  # Use random.choice to pick a name
+    c.start()
+
+
+if __name__ == "__main__":
+    main()
