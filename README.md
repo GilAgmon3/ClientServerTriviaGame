@@ -23,15 +23,17 @@ All client and server applications must be fully compatible with each other, emp
 ## How to Run the Applications
 ### Server
 1. Navigate to the server directory.
-2. Run `server.py` to start the trivia server.
+2. Run `Server.py` to start the trivia server.
+3. Each run of 'Server.py' creates a new server. You may create as much server as you want in the same time.
 
 
 ### Client
 1. Navigate to the client directory.
-2. Run `client.py` to start the trivia client.
+2. Run `Client.py` to start the trivia client.
+3. Each run of 'Client.py' creates a new client. You may create as much clients as you want in the same time.
 
 ## Development Environment
-- Programming Language: Python 3.8
+- Programming Language: Python 3.9
 - External Libraries: `socket`, `json` (for data serialization)
 
 ## Contributors
