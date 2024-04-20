@@ -2,8 +2,7 @@ import queue
 import random
 import threading
 import time
-import socket
-from Player import Player
+from Client.Player import Player
 
 
 class Game:

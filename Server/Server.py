@@ -5,13 +5,14 @@ import threading
 import time
 
 from Game import Game
-from Player import Player
+from Client.Player import Player
 
 
 class Server:
     def __init__(self):
         self.is_broadcasting = False
-        self.local_ip = socket.gethostbyname(socket.gethostname())
+        # self.local_ip = socket.gethostbyname(socket.gethostname())
+        self.local_ip = self.get_local_ip()
         self.udp_socket = None
         self.udp_ip = "255.255.255.255"
         self.udp_port = 13117
@@ -38,6 +39,35 @@ class Server:
             except OSError as e:
                 port += 1
 
+    # NOAM AND LINOY
+    # def get_local_ip(self):
+    #     while True:
+    #         try:
+    #             time.sleep(0.2)
+    #             temp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    #             temp_socket.connect(("8.8.8.8", 80))
+    #             ip_address = temp_socket.getsockname()[0]
+    #             temp_socket.close()
+    #             return ip_address
+    #         except OSError as e:
+    #             print(f"Error in get_local_ip: {e}")
+    #             continue
+
+    def get_local_ip(self):
+        while True:
+            try:
+                time.sleep(0.2)
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+                    # Connect to a public DNS server to get the local IP
+                    sock.connect(('8.8.8.8', 80))
+                    local_ip = sock.getsockname()[0]
+                    return local_ip
+            except OSError as error:
+                print(f"Error obtaining local IP: {error}")
+                # Continue trying until a successful IP retrieval
+
+
+
     def start(self):
         print("Server started, listening on IP address " + self.local_ip)
 
@@ -46,19 +76,24 @@ class Server:
             # open udp connection
             self.udp_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+            self.udp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            self.udp_socket.bind((self.local_ip, self.udp_port))
+
             # open tcp connection
             self.tcp_port = self.__find_available_port(1025)
             self.tcp_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             self.tcp_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-
-            # self.tcp_socket.bind((self.local_ip, self.tcp_port))  # TODO: self.local_ip was ""
-            self.tcp_socket.bind(("", self.tcp_port))  # TODO: "" was self.local_ip
-            self.tcp_socket.settimeout(10)  # TODO: need it?
+            self.tcp_socket.bind((self.local_ip, self.tcp_port))  # TODO: self.local_ip was ""
+            # self.tcp_socket.bind(("", self.tcp_port))  # TODO: "" was self.local_ip
             self.tcp_socket.listen()
+
+            #self.tcp_socket.settimeout(10)  # TODO: need it? GPT DIDNT USE IT
+
 
             # start strategy
 
             self.__strategy()
+
 
     # def start(self):
     #     # open udp connection
